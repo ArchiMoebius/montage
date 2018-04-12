@@ -7,12 +7,17 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'landing-page',
-      component: require('@/components/LandingPage').default,
+      name: 'galleries',
+      component: require('@/components/Galleries').default
+    },
+    {
+      path: '/gallery/:id',
+      name: 'gallery',
+      component: require('@/components/Gallery').default
     },
     {
       path: '*',
-      redirect: '/',
-    },
-  ],
+      redirect: '/'
+    }
+  ]
 });

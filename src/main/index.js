@@ -20,7 +20,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     height: 563,
     useContentSize: true,
-    width: 1000,
+    width: 1000
   });
 
   mainWindow.loadURL(winURL);
@@ -64,11 +64,6 @@ const getImagesFromDirectory = (directory) => {
   return fileArray;
 };
 
-async function addImageToApplication(event, filepath) {
-  console.log('add image to app: ', filepath);//eslint-disable-line
-  event.sender.send('images-added', filepath);
-}
-
 const processDialog = (paths, event) => {
   let files = [];
 
@@ -85,7 +80,7 @@ const processDialog = (paths, event) => {
   }
 
   files.forEach((filepath) => {
-    addImageToApplication(event, filepath);
+    event.sender.send('images-added', filepath);
   });
 };
 
@@ -94,10 +89,10 @@ ipcMain.on('open-file-dialog', (event) => {
   dialog.showOpenDialog({
     filters: [
       {
-        name: 'Images', extensions: ['jpg', 'png', 'jpeg'],
-      },
+        name: 'Images', extensions: ['jpg', 'png', 'jpeg']
+      }
     ],
-    properties: ['openFile', 'multiSelections'],
+    properties: ['openFile', 'multiSelections']
   }, (files) => {
     if (files) {
       processDialog(files, event);
@@ -108,7 +103,7 @@ ipcMain.on('open-file-dialog', (event) => {
 
 ipcMain.on('open-folder-dialog', (event) => {
   dialog.showOpenDialog({
-    properties: ['openDirectory'],
+    properties: ['openDirectory']
   }, (files) => {
     processDialog(files, event);
   });
