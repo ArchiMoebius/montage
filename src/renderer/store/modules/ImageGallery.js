@@ -1,4 +1,5 @@
 const db = require('../db').default.getInstance();
+const path = require('path');
 
 const state = {
   image: {},
@@ -25,9 +26,7 @@ const mutations = {
     state.galleries.push(data);
   },
   REMOVE_GALLERY(state, data) {
-    state.galleries = state.galleries.filter(
-      gallery => gallery.id !== data.id
-    );
+    state.galleries = state.galleries.filter(gallery => gallery.id !== data.id);
   }
 };
 
@@ -54,7 +53,7 @@ const actions = {
     const dbhandle = await db.open();
     let ret = false;
     const gallery = {
-      thumbnail: 'static/default_gallery_thumbnail.png',
+      thumbnail: path.join(__static, 'default_gallery_thumbnail.png'),
       title: data.title,
       hasBeenDeleted: 0,
       isAnEvent: (data.startDate != null && data.endDate != null),

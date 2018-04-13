@@ -51,9 +51,7 @@
 <script>
 import { mapActions } from 'vuex';
 
-import {
-  validationMixin
-} from 'vuelidate';
+import { validationMixin } from 'vuelidate';
 
 import {
   requiredIf,
