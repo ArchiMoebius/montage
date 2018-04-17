@@ -14,6 +14,7 @@
     "babel-preset-env": "^1.6.1",
     "babel-preset-stage-0": "^6.24.1",
     "dexie": "^2.0.2",
+    "electron-log": "^2.2.14",
     "sharp": "^0.20.1",
     "source-map-support": "^0.5.4",
     "vue": "^2.5.16",

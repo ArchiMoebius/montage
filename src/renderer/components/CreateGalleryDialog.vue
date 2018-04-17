@@ -152,6 +152,9 @@ export default {
     createGallery: function() { //eslint-disable-line
       this.$data.showDialog = true;
     }
+  },
+  beforeDestroy() {
+    EventBus.$off('create-gallery', this.createGallery);
   }
 };
 </script>

@@ -1,4 +1,4 @@
-const db = require('../db').default.getInstance();
+const dbhandle = require('../db').default.getInstance();
 const path = require('path');
 
 const state = {
@@ -27,6 +27,9 @@ const mutations = {
   },
   REMOVE_GALLERY(state, data) {
     state.galleries = state.galleries.filter(gallery => gallery.id !== data.id);
+  },
+  REMOVE_IMAGE(state, data) {
+    state.gallery.images = state.gallery.images.filter(image => image.id !== data.id);
   }
 };
 
@@ -50,7 +53,6 @@ const setters = {
 
 const actions = {
   async addGallery(context, data) {
-    const dbhandle = await db.open();
     let ret = false;
     const gallery = {
       thumbnail: path.join(__static, 'default_gallery_thumbnail.png'),
@@ -76,8 +78,6 @@ const actions = {
     }
   },
   async deleteGallery(context, galleryId) {
-    const dbhandle = await db.open();
-
     try {
       await dbhandle.gallery.delete(galleryId);
       context.commit(
@@ -91,8 +91,6 @@ const actions = {
     }
   },
   async trashGallery(context, galleryId) {
-    const dbhandle = await db.open();
-
     try {
       await dbhandle.gallery.update(
         galleryId,
@@ -111,7 +109,6 @@ const actions = {
     }
   },
   async loadGallery(context, galleryId) {
-    const dbhandle = await db.open();
     let gallery;
     let galleryImages = [];
 
@@ -126,16 +123,8 @@ const actions = {
     } catch (e) {
       console.log(e); //eslint-disable-line
     }
-    console.log('galleryImages', galleryImages);//eslint-disable-line
     gallery = gallery.pop();
     gallery.images = galleryImages;
-    /*
-      .map((image) => {
-      image.thumbnail = URL.createObjectURL(image.thumbnail);
-      return image;
-    });
-    */
-    console.log('gallery', gallery);//eslint-disable-line
     context.commit(
       'CURRENT_GALLERY',
       {
@@ -144,7 +133,6 @@ const actions = {
     );
   },
   async loadGalleries(context) {
-    const dbhandle = await db.open();
     let galleries;
 
     try {
@@ -160,7 +148,6 @@ const actions = {
     );
   },
   async addImage(context, data) {
-    const dbhandle = await db.open();
     let ret = false;
     data.image.galleryId = data.galleryId;
 
@@ -173,6 +160,19 @@ const actions = {
     if (ret) {
       data.image.id = ret;
       context.commit('ADD_IMAGE_TO_GALLERY', data);
+    }
+  },
+  async deleteImage(context, imageId) {
+    try {
+      await dbhandle.image.delete(imageId);
+      context.commit(
+        'REMOVE_IMAGE',
+        {
+          id: imageId
+        }
+      );
+    } catch (e) {
+      console.log(e);//eslint-disable-line
     }
   }
 };

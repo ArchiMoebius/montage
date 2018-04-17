@@ -1,5 +1,7 @@
 import { app, ipcMain, dialog, BrowserWindow } from 'electron' // eslint-disable-line
 
+const logger = require('electron-log');
+
 let mainWindow;
 
 const winURL = process.env.NODE_ENV === 'development'
@@ -7,9 +9,8 @@ const winURL = process.env.NODE_ENV === 'development'
   : `file://${__dirname}/index.html`;
 
 function createWindow() {
-  /**
-   * Initial window options
-   */
+  logger.info('application started');
+
   mainWindow = new BrowserWindow({
     height: 563,
     useContentSize: true,
@@ -21,6 +22,7 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+    logger.info('application closed correctly');
   });
 }
 

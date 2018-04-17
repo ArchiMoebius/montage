@@ -8,7 +8,7 @@ export default (function() { //eslint-disable-line
 
     db.version(1).stores({
       gallery: '++id, title, hasBeenDeleted, isAnEvent, dateStart, dateEnd, *tags',
-      image: '++id, galleryId, hasBeenDeleted, hasBeenExported',
+      image: '++id, galleryId, hasBeenExported, type',
       ImageMetadata: '++id, &imageId, width, height, isGrey, *prominentColors, *objects, dateTaken, *exifTags, hasLocation, camera, *faces, hasFaces, *postProcessedBy'
     });
 
