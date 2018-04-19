@@ -68,7 +68,8 @@ export default {
   methods: {
     ...mapActions([
       'ImageGallery/deleteImage',
-      'ImageGallery/updateImage'
+      'ImageGallery/updateImageThumbnail',
+      'ImageGallery/updateImageSrc'
     ]),
     showImageInFilesystem(image) {
       const shown = shell.showItemInFolder(image.src);
@@ -79,22 +80,21 @@ export default {
       }
     },
     async rotateImage(image, angle) {
-      image.src = image.src.split('?')[0];//eslint-disable-line
+      const imageSrc = image.src.split('?')[0];//eslint-disable-line
       const me = this;
 
       try {
-        await sharp(image.src, { useExifOrientation: false })
+        await sharp(imageSrc, { useExifOrientation: false })
           .rotate(angle)
-          .toFile(`${image.src}.tmp`);
-        fs.renameSync(`${image.src}.tmp`, image.src);
-        const thumbnailBlob = await getThumbnailBlob(image.src);
+          .toFile(`${imageSrc}.tmp`);
+        fs.renameSync(`${imageSrc}.tmp`, imageSrc);
+        const thumbnailBlob = await getThumbnailBlob(imageSrc);
         const datetime = new Date();
-        image.src = `${image.src}?${datetime.getTime()}`;
+        await me.$store.dispatch('ImageGallery/updateImageSrc', { id: image.id, src: `${imageSrc}?${datetime.getTime()}` });
 
         const reader = new FileReader();
         reader.onloadend = async function() {//eslint-disable-line
-          image.thumbnail = reader.result;
-          await me.$store.dispatch('ImageGallery/updateImage', image.id, { thumbnail: image.thumbnail }); // TODO: fix this.
+          await me.$store.dispatch('ImageGallery/updateImageThumbnail', { id: image.id, thumbnail: reader.result });
         };
         reader.readAsDataURL(thumbnailBlob);
       } catch (e) {

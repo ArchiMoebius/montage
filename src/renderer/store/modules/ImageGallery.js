@@ -17,6 +17,25 @@ const mutations = {
     // data.image.thumbnail = URL.createObjectURL(data.image.thumbnail);
     state.gallery.images.push(data.image);
   },
+  UPDATE_IMAGE_THUMBNAIL(state, data) {
+    state.image.thumbnail = data.thumbnail;
+    state.gallery.images = state.gallery.images.map((image) => {
+      if (image.id === data.id) {
+        image.thumbnail = data.thumbnail;
+      }
+      return image;
+    });
+  },
+  UPDATE_IMAGE_SRC(state, data) {
+    state.image.src = data.src;
+    state.gallery.images = state.gallery.images.map((image) => {
+      if (image.id === data.id) {
+        image.src = data.src;
+      }
+      return image;
+    });
+    state.image.src = data.src;
+  },
   CURRENT_GALLERY(state, data) {
     state.gallery = data.gallery;
   },
@@ -155,9 +174,28 @@ const actions = {
       }
     }
   },
-  async updateImage(context, imageId, imageChanges) {
+  async updateImageThumbnail(context, imageChanges) {
     try {
-      await dbhandle.image.delete(imageId, imageChanges);
+      const imageId = imageChanges.id;
+      delete imageChanges.id;
+      await dbhandle.image.update(imageId, { thumbnail: imageChanges.thumbnail });
+      context.commit(
+        'UPDATE_IMAGE_THUMBNAIL',
+        {
+          thumbnail: imageChanges.thumbnail,
+          id: imageId
+        }
+      );
+    } catch (e) {
+      logger.error(e);
+    }
+  },
+  async updateImageSrc(context, imageChanges) {
+    try {
+      context.commit(
+        'UPDATE_IMAGE_SRC',
+        imageChanges
+      );
     } catch (e) {
       logger.error(e);
     }
