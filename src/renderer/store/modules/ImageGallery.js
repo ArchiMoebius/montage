@@ -78,9 +78,6 @@ const actions = {
     const gallery = {
       thumbnail: path.join(__static, 'default_gallery_thumbnail.png'),
       title: data.title,
-      isAnEvent: (data.startDate != null && data.endDate != null),
-      dateStart: data.startDate || new Date(),
-      dateEnd: data.endDate || new Date(),
       tags: data.tags.map(function(tag) { //eslint-disable-line
         return tag.replace(/\s\s+/g, '-').toLowerCase();
       })
@@ -136,7 +133,7 @@ const actions = {
     );
   },
   async loadGalleries(context) {
-    let galleries;
+    let galleries = [];
 
     try {
       galleries = await dbhandle.gallery.toArray();//eslint-disable-line

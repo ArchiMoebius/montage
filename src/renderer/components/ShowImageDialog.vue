@@ -18,6 +18,10 @@
         <md-icon>close</md-icon>
         <md-tooltip>Close Window</md-tooltip>
       </md-button>
+      <md-button style="float:right;" class="md-primary" @click="negateImage( image )">
+        <md-icon>iso</md-icon>
+        <md-tooltip>Invert all colors</md-tooltip>
+      </md-button>
       <md-button style="float:right;" class="md-primary" @click="rotateImage( image, 90 )">
         <md-icon>rotate_right</md-icon>
         <md-tooltip>Rotate image to the right 90°</md-tooltip>
@@ -77,6 +81,28 @@ export default {
       if (!shown) {
         logger.error('Unable to show item in folder');
         new Notification('Unable to find image...');//eslint-disable-line
+      }
+    },
+    async negateImage(image) { // TODO: dry-up and extract common code with rotateImage
+      const imageSrc = image.src.split('?')[0];//eslint-disable-line
+      const me = this;
+
+      try {
+        await sharp(imageSrc, { useExifOrientation: false })
+          .negate()
+          .toFile(`${imageSrc}.tmp`);
+        fs.renameSync(`${imageSrc}.tmp`, imageSrc);
+        const thumbnailBlob = await getThumbnailBlob(imageSrc);
+        const datetime = new Date();
+        await me.$store.dispatch('ImageGallery/updateImageSrc', { id: image.id, src: `${imageSrc}?${datetime.getTime()}` });
+
+        const reader = new FileReader();
+        reader.onloadend = async function() {//eslint-disable-line
+          await me.$store.dispatch('ImageGallery/updateImageThumbnail', { id: image.id, thumbnail: reader.result });
+        };
+        reader.readAsDataURL(thumbnailBlob);
+      } catch (e) {
+        logger.error(e);
       }
     },
     async rotateImage(image, angle) {

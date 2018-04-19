@@ -14,22 +14,6 @@
                 <span class="md-error" v-else-if="!$v.form.title.maxLength">Invalid title, less than 64 characters required</span>
               </md-field>
             </div>
-            <div class="md-layout-item md-size-40">
-              <md-field :class="getValidationClass('startDate')">
-                <label for="title">Start Date</label>
-                <md-datepicker v-model="form.startDate" :disabled="sending" />
-                <span class="md-error" v-if="!$v.form.startDate.maxValue && $v.form.startDate.requiredIf">The start date must be less than the end date</span>
-                <span class="md-error" v-if="!$v.form.startDate.requiredIf && !$v.form.startDate.maxValue">The start date must be defined if the end date is defined</span>
-              </md-field>
-            </div>
-            <div class="md-layout-item md-size-40">
-              <md-field :class="getValidationClass('endDate')">
-                <label for="title">End Date</label>
-                <md-datepicker v-model="form.endDate" :disabled="sending" />
-                <span class="md-error" v-if="!$v.form.endDate.minValue && $v.form.endDate.requiredIf">The end date must be greater than the start date</span>
-                <span class="md-error" v-if="!$v.form.endDate.requiredIf && !$v.form.endDate.minValue">The end date must be defined if the start date is defined</span>
-              </md-field>
-            </div>
             <div class="md-layout-item md-size-90">
               <md-field :class="getValidationClass('tags')">
                 <md-chips v-model="form.tags" md-placeholder="Type and press enter to add a tag!"></md-chips>
@@ -54,9 +38,6 @@ import { mapActions } from 'vuex';
 import { validationMixin } from 'vuelidate';
 
 import {
-  requiredIf,
-  minValue,
-  maxValue,
   required,
   minLength,
   maxLength
@@ -74,9 +55,6 @@ export default {
     form: {
       id: null,
       title: null,
-      startDate: null,
-      endDate: null,
-      isEvent: false,
       tags: []
     },
     sending: false,
@@ -89,14 +67,6 @@ export default {
           required,
           minLength: minLength(8),
           maxLength: maxLength(64)
-        },
-        startDate: {
-          maxValue: maxValue(this.form.endDate),
-          requiredIf: requiredIf(this.form.endDate)
-        },
-        endDate: {
-          minValue: minValue(this.form.startDate),
-          requiredIf: requiredIf(this.form.startDate)
         },
         tags: {
           required
@@ -130,9 +100,6 @@ export default {
         this.form = {
           id: null,
           title: null,
-          startDate: null,
-          endDate: null,
-          isEvent: false,
           tags: []
         };
         this.showDialog = false;

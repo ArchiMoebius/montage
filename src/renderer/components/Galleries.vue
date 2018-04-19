@@ -1,7 +1,7 @@
 <template>
   <div style="margin:10px;" v-if="loaded">
     <md-card
-      v-if="galleries.length > 0"
+      v-if="galleries && galleries.length > 0"
       md-with-hover
       class="md-layout-item md-medium-size-30 md-small-size-48 md-xsmall-size-100"
       v-for="gallery in galleries"
@@ -21,7 +21,7 @@
     </md-card>
     <div style="width:100vw;height:90vh;" class="md-layout md-gutter md-alignment-center">
       <md-empty-state
-        v-if="galleries.length <= 0"
+        v-if="!galleries || galleries.length <= 0"
         md-rounded
         md-icon="gradient"
         md-label="No galleries found"

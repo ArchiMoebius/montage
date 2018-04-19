@@ -7,7 +7,7 @@ export default (function() { //eslint-disable-line
     const db = new Dexie('Montage'); //eslint-disable-line
 
     db.version(1).stores({
-      gallery: '++id, title, isAnEvent, dateStart, dateEnd, *tags',
+      gallery: '++id, title, *tags',
       image: '++id, galleryId, hasBeenExported, type, hash, [hash+id]',
       ImageMetadata: '++id, &galleryId, &imageId, width, height, isGrey, *prominentColors, *objects, dateTaken, *exifTags, hasLocation, camera, *faces, hasFaces, *postProcessedBy'
     });
