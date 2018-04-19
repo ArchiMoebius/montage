@@ -1,5 +1,5 @@
 <template>
-  <md-app md-waterfall md-mode="fixed">
+  <md-app md-waterfall md-mode="fixed" :md-scrollbar="showScrollbar">
     <md-app-toolbar class="md-primary">
       <router-link to="/galleries">
         <md-button class="md-fab md-primary md-icon-button" md-menu-trigger :disabled="galleriesPageActive">
@@ -8,25 +8,10 @@
         </md-button>
       </router-link>
 <!-- Import Images Menu Start -->
-      <md-menu md-size="big" md-direction="bottom-end">
-        <md-button class="md-icon-button" md-menu-trigger :disabled="galleriesPageActive">
-          <md-icon>add_a_photo</md-icon>
-          <md-tooltip md-direction="bottom">Import Images</md-tooltip>
-        </md-button>
-        <md-menu-content>
-          <span style="margin-left:10px;" class="md-title">Import Images From</span>
-          <md-menu-item @click="importImages()">
-            <md-icon>collections</md-icon>
-            <span>File</span>
-            <md-tooltip md-direction="right">Import specific image files</md-tooltip>
-          </md-menu-item>
-          <md-menu-item @click="importImagesFolder()">
-            <md-icon>folder</md-icon>
-            <span>Folder</span>
-            <md-tooltip md-direction="right">Import all images under a folder</md-tooltip>
-          </md-menu-item>
-        </md-menu-content>
-      </md-menu>
+      <md-button class="md-icon-button" md-menu-trigger :disabled="galleriesPageActive" @click="importImages()">
+        <md-icon>add_a_photo</md-icon>
+        <md-tooltip md-direction="bottom">Import Images</md-tooltip>
+      </md-button>
 <!-- Import Images Menu End -->
 <!-- Gallery Menu Start -->
       <md-menu md-size="big" md-direction="bottom-end">
@@ -46,7 +31,7 @@
             <span>Rename</span>
             <md-tooltip v-bind:class="{ disabled: galleriesPageActive }" md-direction="right">Edit Gallery</md-tooltip>
           </md-menu-item>
-          <md-menu-item @click="notImplementedYet()" :disabled="galleriesPageActive">
+          <md-menu-item @click="deleteGallery()" :disabled="galleriesPageActive">
             <md-icon>delete</md-icon>
             <span>Delete</span>
             <md-tooltip v-bind:class="{ disabled: galleriesPageActive }" md-direction="right">Delete Gallery</md-tooltip>
@@ -89,6 +74,7 @@
       <router-view></router-view>
       <create-gallery-dialog></create-gallery-dialog>
       <show-image-dialog></show-image-dialog>
+      <import-images-dialog></import-images-dialog>
     </md-app-content>
   </md-app>
 </template>
@@ -98,23 +84,18 @@
   import { EventBus } from '../store/EventBus';
   import CreateGalleryDialog from './CreateGalleryDialog.vue';
   import ShowImageDialog from './ShowImageDialog.vue';
-
-  const { ipcRenderer } = require('electron');//eslint-disable-line
-
-  /*
-  ipcRenderer.on('images-added', async (evt, data) => {//eslint-disable-line
-    // console.log('assdfasdf images added and done', this, evt, data);// eslint-disable-line
-  });
-  */
+  import ImportImagesDialog from './ImportImagesDialog.vue';
 
   export default {
     name: 'navigation-bar',
     components: {
       CreateGalleryDialog,
-      ShowImageDialog
+      ShowImageDialog,
+      ImportImagesDialog
     },
     data: () => ({
-      gallery: {}
+      gallery: {},
+      showScrollbar: false
     }),
     computed: {
       ...mapGetters([
@@ -125,14 +106,14 @@
       }
     },
     methods: {
-      importImages: function() {//eslint-disable-line
-        ipcRenderer.send('open-file-dialog');
+      importImages() {
+        EventBus.$emit('import-images');
       },
-      createGallery: function () {// eslint-disable-line
+      createGallery() {
         EventBus.$emit('create-gallery');
       },
-      importImagesFolder: () => {
-        ipcRenderer.send('open-folder-dialog');
+      deleteGallery() {
+        EventBus.$emit('delete-gallery', this.gallery);
       },
       notImplementedYet: () => {
         alert('this feature is not yet implemented...');//eslint-disable-line
@@ -141,11 +122,11 @@
         this.gallery = gallery;
       }
     },
-    mounted: function() {//eslint-disable-line
+    mounted() {
       EventBus.$on('view-gallery', this.updateGallery);
     },
     beforeDestroy() {
-      EventBus.$off('view-gallery', this.viewImage);
+      EventBus.$off('view-gallery', this.updateGallery);
     }
   };
 </script>
@@ -153,7 +134,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic');
 
-  body { font-family: 'Roboto', sans-serif; }
+  body { font-family: 'Roboto', sans-serif; background-color: #070e1a;}
 
   .md-app {
     max-height: 100vh;
@@ -169,13 +150,13 @@
   }
 
   div.md-app-scroller {
-    background-color: #070b11 !important;
+    background-color: #070e1a !important;
     padding: 0px !important;
     margin: 0px !important;
   }
 
   div.md-app-content {
-    background-color: #070b11 !important;
+    background-color: #070e1a !important;
     overflow-x: hidden;
     padding: 0px !important;
     margin: 0px !important;
@@ -183,11 +164,15 @@
 
   img.thumbnail {
     padding: 1px;
-    border: 1px solid #101a29;
+    border: 1px solid #0a1425;
     cursor: pointer;
   }
 
   img.thumbnail:hover {
-    border: 1px solid #4775bb;
+    border: 1px solid #356dc9;
+  }
+
+  .md-empty-state {
+    background-color: #356dc9 !important;
   }
 </style>

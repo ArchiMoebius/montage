@@ -7,9 +7,9 @@ export default (function() { //eslint-disable-line
     const db = new Dexie('Montage'); //eslint-disable-line
 
     db.version(1).stores({
-      gallery: '++id, title, hasBeenDeleted, isAnEvent, dateStart, dateEnd, *tags',
-      image: '++id, galleryId, hasBeenExported, type',
-      ImageMetadata: '++id, &imageId, width, height, isGrey, *prominentColors, *objects, dateTaken, *exifTags, hasLocation, camera, *faces, hasFaces, *postProcessedBy'
+      gallery: '++id, title, isAnEvent, dateStart, dateEnd, *tags',
+      image: '++id, galleryId, hasBeenExported, type, hash, [hash+id]',
+      ImageMetadata: '++id, &galleryId, &imageId, width, height, isGrey, *prominentColors, *objects, dateTaken, *exifTags, hasLocation, camera, *faces, hasFaces, *postProcessedBy'
     });
 
     return db;
@@ -22,7 +22,7 @@ export default (function() { //eslint-disable-line
       }
       return instance;
     },
-    cleanAll: () => {
+    clean: () => {
       // https://gist.github.com/skratchdot/c6788727ab7005066de9
       Dexie.getDatabaseNames(function(names, cb) { //eslint-disable-line
         console.log('database names: ', names); //eslint-disable-line

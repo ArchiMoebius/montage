@@ -1,5 +1,6 @@
 const dbhandle = require('../db').default.getInstance();
 const path = require('path');
+const logger = require('electron-log');
 
 const state = {
   image: {},
@@ -27,6 +28,7 @@ const mutations = {
   },
   REMOVE_GALLERY(state, data) {
     state.galleries = state.galleries.filter(gallery => gallery.id !== data.id);
+    state.gallery.images = [];
   },
   REMOVE_IMAGE(state, data) {
     state.gallery.images = state.gallery.images.filter(image => image.id !== data.id);
@@ -57,7 +59,6 @@ const actions = {
     const gallery = {
       thumbnail: path.join(__static, 'default_gallery_thumbnail.png'),
       title: data.title,
-      hasBeenDeleted: 0,
       isAnEvent: (data.startDate != null && data.endDate != null),
       dateStart: data.startDate || new Date(),
       dateEnd: data.endDate || new Date(),
@@ -69,7 +70,7 @@ const actions = {
     try {
       ret = await dbhandle.gallery.add(gallery);
     } catch (e) {
-      console.log(e);//eslint-disable-line
+      logger.error(e);
     }
 
     if (ret) {
@@ -79,6 +80,7 @@ const actions = {
   },
   async deleteGallery(context, galleryId) {
     try {
+      await dbhandle.image.where({ galleryId }).delete();
       await dbhandle.gallery.delete(galleryId);
       context.commit(
         'REMOVE_GALLERY',
@@ -87,25 +89,7 @@ const actions = {
         }
       );
     } catch (e) {
-      console.log(e);//eslint-disable-line
-    }
-  },
-  async trashGallery(context, galleryId) {
-    try {
-      await dbhandle.gallery.update(
-        galleryId,
-        {
-          deleted: true
-        }
-      );
-      context.commit(
-        'REMOVE_GALLERY',
-        {
-          id: galleryId
-        }
-      );
-    } catch (e) {
-      console.log(e);//eslint-disable-line
+      logger.error(e);
     }
   },
   async loadGallery(context, galleryId) {
@@ -121,7 +105,7 @@ const actions = {
         galleryId
       }).toArray();
     } catch (e) {
-      console.log(e); //eslint-disable-line
+      logger.error(e);
     }
     gallery = gallery.pop();
     gallery.images = galleryImages;
@@ -136,9 +120,9 @@ const actions = {
     let galleries;
 
     try {
-      galleries = await dbhandle.gallery.where({hasBeenDeleted: 0}).toArray();//eslint-disable-line
+      galleries = await dbhandle.gallery.toArray();//eslint-disable-line
     } catch (e) {
-      console.log(e); //eslint-disable-line
+      logger.error(e);
     }
     context.commit(
       'GALLERIES',
@@ -149,17 +133,33 @@ const actions = {
   },
   async addImage(context, data) {
     let ret = false;
-    data.image.galleryId = data.galleryId;
 
     try {
-      ret = await dbhandle.image.add(data.image);
+      ret = await dbhandle.image.where('[hash+id]').equals([data.image.hash, data.galleryId]).count();
     } catch (e) {
-      console.log(e);//eslint-disable-line
+      logger.error(e);
     }
 
-    if (ret) {
-      data.image.id = ret;
-      context.commit('ADD_IMAGE_TO_GALLERY', data);
+    if (ret <= 0) {
+      data.image.galleryId = data.galleryId;
+
+      try {
+        ret = await dbhandle.image.add(data.image);
+      } catch (e) {
+        logger.error(e);
+      }
+
+      if (ret) {
+        data.image.id = ret;
+        context.commit('ADD_IMAGE_TO_GALLERY', data);
+      }
+    }
+  },
+  async updateImage(context, imageId, imageChanges) {
+    try {
+      await dbhandle.image.delete(imageId, imageChanges);
+    } catch (e) {
+      logger.error(e);
     }
   },
   async deleteImage(context, imageId) {
@@ -172,7 +172,7 @@ const actions = {
         }
       );
     } catch (e) {
-      console.log(e);//eslint-disable-line
+      logger.error(e);
     }
   }
 };

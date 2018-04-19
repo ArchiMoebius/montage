@@ -1,4 +1,6 @@
-import { app, ipcMain, dialog, BrowserWindow } from 'electron' // eslint-disable-line
+import { app, ipcMain, dialog, BrowserWindow } from 'electron';// eslint-disable-line
+
+import { checksumFile } from '../utils';
 
 const logger = require('electron-log');
 
@@ -12,9 +14,7 @@ function createWindow() {
   logger.info('application started');
 
   mainWindow = new BrowserWindow({
-    height: 563,
-    useContentSize: true,
-    width: 1000
+    fullscreen: true
   });
 
   mainWindow.webContents.openDevTools();
@@ -60,7 +60,7 @@ const getImagesFromDirectory = (directory) => {
   return fileArray;
 };
 
-const processDialog = (paths, event) => {
+async function processDialog(paths, event, opts) {
   let files = [];
 
   if (paths.length === 1) { // a single image or a directory to iterate over
@@ -74,14 +74,33 @@ const processDialog = (paths, event) => {
   } else { // array of images to import
     files = paths;
   }
+  // TODO: use opts
+  const checksums = {};
+  const filesToProcess = [];
+  const filePromises = await files.map(async (filepath) => {
+    const checksum = await checksumFile('md5', filepath);
 
-  files.forEach((filepath) => {
-    event.sender.send('images-added', filepath);
+    if (!checksums[checksum]) {
+      checksums[checksum] = true;
+      filesToProcess.push({ checksum, filepath });
+    }
   });
-};
+  await Promise.all(filePromises);
+  const fileCount = filesToProcess.length;
+  filesToProcess.forEach((fileItem) => {
+    event.sender.send(
+      'images-added',
+      {
+        filepath: fileItem.filepath,
+        checksum: fileItem.checksum,
+        fileCount,
+        opts
+      }
+    );
+  });
+}
 
-
-ipcMain.on('open-file-dialog', (event) => {
+ipcMain.on('open-file-dialog', (event, opts) => {
   dialog.showOpenDialog({
     filters: [
       {
@@ -90,18 +109,19 @@ ipcMain.on('open-file-dialog', (event) => {
     ],
     properties: ['openFile', 'multiSelections']
   }, (files) => {
-    if (files) {
-      processDialog(files, event);
+    if (files && files.length > 0) {
+      processDialog(files, event, opts);
     }
   });
 });
 
-
-ipcMain.on('open-folder-dialog', (event) => {
+ipcMain.on('open-folder-dialog', (event, opts) => {
   dialog.showOpenDialog({
     properties: ['openDirectory']
   }, (files) => {
-    processDialog(files, event);
+    if (files && files.length > 0) {
+      processDialog(files, event, opts);
+    }
   });
 });
 

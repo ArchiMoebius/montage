@@ -1,7 +1,8 @@
 <template>
   <div class="md-layout md-alignment-top-center" id="gallery">
+    <md-progress-bar v-if="imagesImported > 0" style="width:100%;" md-mode="determinate" :md-value="progressImportingImages"></md-progress-bar>
     <div
-      v-if="gallery.images.length > 0"
+      v-if="loaded && gallery.images.length > 0"
       class="md-layout-item md-size-10"
       v-for="image, imageIndex in gallery.images"
       :key="image.id"
@@ -10,7 +11,7 @@
     </div>
     <div style="width:100vw;height:90vh;" class="md-layout md-gutter md-alignment-center">
       <md-empty-state
-        v-if="gallery.images.length <= 0"
+        v-if="loaded && gallery.images.length <= 0"
         md-rounded
         md-icon="add_a_photo"
         md-label="Gallery is empty..."
@@ -25,58 +26,68 @@
   import { basename } from 'path';
 
   import { EventBus } from '../store/EventBus';
-
-  const sharp = require('sharp');
+  import { checksumFile, getThumbnailBlob } from '../../utils';
 
   const { ipcRenderer } = require('electron');//eslint-disable-line
 
-  async function addImageFromFilepath(filepath) {//eslint-disable-line
+  async function addImageFromFilepath(data) {//eslint-disable-line
     const reader = new FileReader();
     reader.onloadend = function() {//eslint-disable-line
       let image = {//eslint-disable-line
-        src: filepath,
+        src: data.filepath,
         type: 0,
-        alt: basename(filepath),
+        alt: basename(data.filepath),
         thumbnail: reader.result,
-        hasBeenDeleted: 0,
-        hasBeenExported: 0
+        hasBeenExported: 0,
+        hash: data.checksum
       };
-      EventBus.$emit('image-added', image);
+      EventBus.$emit(
+        'image-added',
+        {
+          image,
+          fileCount: data.fileCount
+        }
+      );
     };
-
-    const thumbnailData = await sharp(filepath)
-      .resize(180)
-      .toFormat('png')
-      .toBuffer();
-    const thumbnailBlob = new Blob(
-      [new Uint8Array(thumbnailData).buffer],
-      {
-        type: 'image/png'
-      }
-    );
+    const thumbnailBlob = await getThumbnailBlob(data.filepath);
     reader.readAsDataURL(thumbnailBlob);
   }
 
-  ipcRenderer.on('images-added', async function(evt, filepath) {//eslint-disable-line
-    addImageFromFilepath(filepath);
+  ipcRenderer.on('images-added', async function(evt, data) {//eslint-disable-line
+    addImageFromFilepath(data);
   });
 
-  function addImageFromDragDrop(e) {
+  async function addImageFromDragDrop(e) {
     e.preventDefault();
     e.stopPropagation();
+    const filesToAdd = [];
+    const checksums = {};
 
     for (const f of e.dataTransfer.files) {//eslint-disable-line
       const supportedFileTypes = /(\.jpg|\.jpeg|\.png)$/i;
 
       if (supportedFileTypes.test(f.path)) {
-        addImageFromFilepath(f.path);
+        const checksum = await checksumFile('md5', f.path);//eslint-disable-line
+
+        if (!checksums[checksum]) {
+          checksums[checksum] = true;
+          filesToAdd.push({ filepath: f.path, checksum });
+        }
       }
     }
+    const fileCount = filesToAdd.length;
+    filesToAdd.forEach((item) => {
+      item.fileCount = fileCount;
+      addImageFromFilepath(item);
+    });
   }
 
   export default {
     name: 'gallery',
     data: () => ({
+      loaded: false,
+      progressImportingImages: 0,
+      imagesImported: 0
     }),
     computed: {
       ...mapGetters({
@@ -86,30 +97,26 @@
     methods: {
       ...mapActions([
         'ImageGallery/loadGallery',
-        'ImageGallery/addImage',
-        'ImageGallery/deleteImage'
+        'ImageGallery/addImage'
       ]),
-      async deleteImage(image) {
-        await this.$store.dispatch('ImageGallery/deleteImage', image.id);
-      },
       viewImage: (image, index) => {
         image.index = index;
         EventBus.$emit('show-image', image);
       },
-      async imageAdded(image) {
+      async imageAdded(data) {
         await this.$store.dispatch(
           'ImageGallery/addImage',
           {
             galleryId: parseInt(this.$route.params.id, 10),
-            image
+            image: data.image
           }
         );
-      },
-      importImages() {
-        ipcRenderer.send('open-file-dialog');
-      },
-      importImagesFolder: () => {
-        ipcRenderer.send('open-folder-dialog');
+
+        this.progressImportingImages = (((this.imagesImported++) / data.fileCount ) * 100);//eslint-disable-line
+
+        if (data.fileCount <= this.imagesImported) {
+          this.imagesImported = 0;
+        }
       },
       showPrevImage(currentImageIndex) {
         if (currentImageIndex > 0) {
@@ -136,6 +143,7 @@
       async loadGallery() {
         await this.$store.dispatch('ImageGallery/loadGallery', parseInt(this.$route.params.id, 10));
         EventBus.$emit('view-gallery', this.gallery);
+        this.loaded = true;
       }
     },
     mounted() {//eslint-disable-line
@@ -151,10 +159,17 @@
         e.stopPropagation();
       });
     },
+    created() {
+      EventBus.$off('image-added', this.imageAdded);
+      EventBus.$off('load-next-image', this.showNextImage);
+      EventBus.$off('load-prev-image', this.showPrevImage);
+      this.loaded = false;
+    },
     beforeDestroy() {
       EventBus.$off('image-added', this.imageAdded);
       EventBus.$off('load-next-image', this.showNextImage);
       EventBus.$off('load-prev-image', this.showPrevImage);
+      this.loaded = false;
     }
   };
 </script>

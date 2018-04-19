@@ -1,9 +1,9 @@
 <template>
-  <div style="margin:10px;">
+  <div style="margin:10px;" v-if="loaded">
     <md-card
       v-if="galleries.length > 0"
       md-with-hover
-      class="md-layout-item md-medium-size-33 md-small-size-50 md-xsmall-size-100"
+      class="md-layout-item md-medium-size-30 md-small-size-48 md-xsmall-size-100"
       v-for="gallery in galleries"
       :key="gallery.id"
     >
@@ -34,9 +34,14 @@
 <script>
   import { mapGetters, mapActions } from 'vuex';
 
+  import { EventBus } from '../store/EventBus';
+
+  const { remote } = require('electron');//eslint-disable-line
+
   export default {
     name: 'galleries',
     data: () => ({
+      loaded: false
     }),
     computed: {
       ...mapGetters({
@@ -48,8 +53,24 @@
         'ImageGallery/loadGalleries',
         'ImageGallery/deleteGallery'
       ]),
-      async deleteGallery(gallery) {//eslint-disable-line
-        await this.$store.dispatch('ImageGallery/deleteGallery', gallery.id);
+      async deleteGallery(gallery) {
+        const deleteGallery = remote.dialog.showMessageBox(
+          remote.getCurrentWindow(),
+          {
+            title: 'Delete Gallery?',
+            type: 'question',
+            message: `Are you sure you want to delete ${gallery.title}?`,
+            buttons: [
+              'No',
+              'Yes'
+            ]
+          }
+        );
+
+        if (deleteGallery) {
+          await this.$store.dispatch('ImageGallery/deleteGallery', gallery.id);
+          this.$router.push({ path: '/galleries' });
+        }
       },
       viewGallery(gallery) {
         this.$router.push({ path: `/gallery/${gallery.id}` });
@@ -57,11 +78,18 @@
       editGallery: (image) => {
         console.log(image);//eslint-disable-line
       },
-      loadGalleries() {//eslint-disable-line
-        this.$store.dispatch('ImageGallery/loadGalleries');
+      async loadGalleries() {//eslint-disable-line
+        await this.$store.dispatch('ImageGallery/loadGalleries');
+        this.loaded = true;
       }
     },
-    beforeMount: function() {//eslint-disable-line
+    mounted() {
+      EventBus.$on('delete-gallery', this.deleteGallery);
+    },
+    beforeDestroy() {
+      this.loaded = false;
+    },
+    beforeMount() {//eslint-disable-line
       this.loadGalleries();
     }
   };
@@ -69,9 +97,12 @@
 
 <style>
   .md-card {
-    min-width: 180px;
+    height: auto;
     width: 180px;
-    margin: 4px;
+    min-width: 120px;
+    max-width: 240px;
+    min-height: 120px;
+    margin: 0px 5px 5px 0px !important;
     display: inline-block;
     vertical-align: top;
   }
