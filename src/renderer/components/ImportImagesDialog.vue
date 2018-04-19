@@ -11,6 +11,7 @@
               <md-select v-model="form.imageSource" name="imageSource" id="imageSource" :disabled="sending">
                 <md-option value="0">Filesystem: Folder</md-option>
                 <md-option value="1">Filesystem: File</md-option>
+                <md-option value="2">Filesystem: Each sub-directory as new gallery</md-option>
               </md-select>
               <span class="md-error" v-if="!$v.form.imageSource.required">The Image Source is required</span>
             </md-field>
@@ -86,7 +87,11 @@
 </template>
 
 <script>
-
+/*
+ TODO:
+  1. Update nav bar to include import images as an option
+  2. Add checkbox and input fields for new gallery creation upon import (create new gallery?, if true then collect title and tags - create gallery, get id, pass to importfunc in main etc....)
+*/
 import { mapActions } from 'vuex';
 
 import { validationMixin } from 'vuelidate';
@@ -160,11 +165,9 @@ export default {
       try {
         switch (this.form.imageSource) {
           case '0':
-          case '2':
-            ipcRenderer.send('open-folder-dialog', this.form);
-            break;
           case '1':
-            ipcRenderer.send('open-file-dialog', this.form);
+          case '2':
+            ipcRenderer.send('import-images-dialog', this.form);
             break;
           default:
             break;

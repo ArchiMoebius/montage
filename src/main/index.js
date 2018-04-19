@@ -1,6 +1,6 @@
 import { app, ipcMain, dialog, BrowserWindow } from 'electron';// eslint-disable-line
 
-import { checksumFile } from '../utils';
+import { processFiles, pathToGalleries } from '../utils';
 
 const logger = require('electron-log');
 
@@ -40,87 +40,64 @@ app.on('activate', () => {
   }
 });
 
-const { statSync, readdirSync } = require('fs');
-const { join } = require('path');
-const getImagesFromDirectory = (directory) => {
-  let fileArray = [];
-  const files = readdirSync(directory);
-  const supportedFileTypes = /(\.jpg|\.jpeg|\.png)$/i;
+ipcMain.on('import-images-dialog', (event, opts) => {
+  let filterExtensions = ['jpg', 'png', 'jpeg'];
+  let filterName = 'Images';
+  let filterProps = ['openFile', 'multiSelections'];
 
-  files.forEach((file) => {
-    const filepath = join(directory, file);
-    const pathStat = statSync(filepath);
-
-    if (pathStat.isDirectory()) {
-      fileArray = fileArray.concat(getImagesFromDirectory(filepath));
-    } else if (supportedFileTypes.test(filepath)) {
-      fileArray.push(filepath);
-    }
-  });
-  return fileArray;
-};
-
-async function processDialog(paths, event, opts) {
-  let files = [];
-
-  if (paths.length === 1) { // a single image or a directory to iterate over
-    const pathStat = statSync(paths[0]);
-
-    if (pathStat.isDirectory()) {
-      files = getImagesFromDirectory(paths[0]);
-    } else {
-      files = paths;
-    }
-  } else { // array of images to import
-    files = paths;
+  if (opts.imageSource === '0') {
+    filterExtensions = false;
+    filterName = 'Import all images into this gallery';
+    filterProps = ['openDirectory'];
   }
-  // TODO: use opts
-  const checksums = {};
-  const filesToProcess = [];
-  const filePromises = await files.map(async (filepath) => {
-    const checksum = await checksumFile('md5', filepath);
 
-    if (!checksums[checksum]) {
-      checksums[checksum] = true;
-      filesToProcess.push({ checksum, filepath });
-    }
-  });
-  await Promise.all(filePromises);
-  const fileCount = filesToProcess.length;
-  filesToProcess.forEach((fileItem) => {
-    event.sender.send(
-      'images-added',
-      {
-        filepath: fileItem.filepath,
-        checksum: fileItem.checksum,
-        fileCount,
-        opts
-      }
-    );
-  });
-}
+  if (opts.imageSource === '2') {
+    filterExtensions = false;
+    filterName = 'Import each directory as a gallery';
+    filterProps = ['openDirectory'];
+  }
 
-ipcMain.on('open-file-dialog', (event, opts) => {
   dialog.showOpenDialog({
     filters: [
       {
-        name: 'Images', extensions: ['jpg', 'png', 'jpeg']
+        name: filterName, extensions: filterExtensions
       }
     ],
-    properties: ['openFile', 'multiSelections']
-  }, (files) => {
-    if (files && files.length > 0) {
-      processDialog(files, event, opts);
-    }
-  });
-});
+    properties: filterProps
+  }, async (paths) => {
+    if (paths && paths.length > 0) {
+      if (
+        opts.imageSource === '0' ||
+        opts.imageSource === '1'
+      ) {
+        const filesToProcess = await processFiles(paths);
 
-ipcMain.on('open-folder-dialog', (event, opts) => {
-  dialog.showOpenDialog({
-    properties: ['openDirectory']
-  }, (files) => {
-    if (files && files.length > 0) {
-      processDialog(files, event, opts);
+        const fileCount = filesToProcess.length;
+        filesToProcess.forEach((fileItem) => {
+          event.sender.send(
+            'images-added',
+            {
+              filepath: fileItem.filepath,
+              checksum: fileItem.checksum,
+              fileCount,
+              opts
+            }
+          );
+        });
+      }
+
+      if (opts.imageSource === '2') {
+        const galleries = await pathToGalleries(paths[0]);
+        galleries.forEach((gallery) => {
+          event.sender.send(
+            'add-gallery',
+            {
+              gallery,
+              opts
+            }
+          );
+        });
+      }
     }
   });
 });

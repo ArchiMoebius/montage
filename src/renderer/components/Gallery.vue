@@ -57,6 +57,11 @@
     addImageFromFilepath(data);
   });
 
+  ipcRenderer.on('add-gallery', async function(evt, data) {//eslint-disable-line
+    console.log(data);
+    // addImageFromFilepath(data);
+  });
+
   async function addImageFromDragDrop(e) {
     e.preventDefault();
     e.stopPropagation();
