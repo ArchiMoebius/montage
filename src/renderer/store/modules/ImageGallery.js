@@ -73,26 +73,30 @@ const setters = {
 };
 
 const actions = {
-  async addGallery(context, data) {
-    let ret = false;
-    const gallery = {
-      thumbnail: path.join(__static, 'default_gallery_thumbnail.png'),
-      title: data.title,
-      tags: data.tags.map(function(tag) { //eslint-disable-line
-        return tag.replace(/\s\s+/g, '-').toLowerCase();
-      })
-    };
+  addGallery(context, data) {
+    return new Promise(async (resolve, reject) => {
+      let ret = false;
+      const gallery = {
+        thumbnail: path.join(__static, 'default_gallery_thumbnail.png'),
+        title: data.title,
+        tags: data.tags.map(function(tag) { //eslint-disable-line
+          return tag.replace(/\s\s+/g, '-').toLowerCase();
+        })
+      };
 
-    try {
-      ret = await dbhandle.gallery.add(gallery);
-    } catch (e) {
-      logger.error(e);
-    }
+      try {
+        ret = await dbhandle.gallery.add(gallery);
+      } catch (e) {
+        logger.error(e);
+        reject(e);
+      }
 
-    if (ret) {
-      gallery.id = ret;
-      context.commit('ADD_GALLERY', gallery);
-    }
+      if (ret) {
+        gallery.id = ret;
+        context.commit('ADD_GALLERY', gallery);
+      }
+      resolve(ret);
+    });
   },
   async deleteGallery(context, galleryId) {
     try {

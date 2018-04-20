@@ -1,6 +1,5 @@
 <template>
   <div class="md-layout md-alignment-top-center" id="gallery">
-    <md-progress-bar v-if="imagesImported > 0" style="width:100%;" md-mode="determinate" :md-value="progressImportingImages"></md-progress-bar>
     <div
       v-if="loaded && gallery.images.length > 0"
       class="md-layout-item md-size-10"
@@ -41,11 +40,20 @@
         hasBeenExported: 0,
         hash: data.checksum
       };
+      console.log(
+        'emitting on eventbus',
+        {
+          image,
+          fileCount: data.fileCount,
+          galleryId: data.opts.galleryId
+        }
+      );
       EventBus.$emit(
         'image-added',
         {
           image,
-          fileCount: data.fileCount
+          fileCount: data.fileCount,
+          galleryId: data.opts.galleryId
         }
       );
     };
@@ -101,27 +109,11 @@
     },
     methods: {
       ...mapActions([
-        'ImageGallery/loadGallery',
-        'ImageGallery/addImage'
+        'ImageGallery/loadGallery'
       ]),
       viewImage: (image, index) => {
         image.index = index;
         EventBus.$emit('show-image', image);
-      },
-      async imageAdded(data) {
-        await this.$store.dispatch(
-          'ImageGallery/addImage',
-          {
-            galleryId: parseInt(this.$route.params.id, 10),
-            image: data.image
-          }
-        );
-
-        this.progressImportingImages = (((this.imagesImported++) / data.fileCount ) * 100);//eslint-disable-line
-
-        if (data.fileCount <= this.imagesImported) {
-          this.imagesImported = 0;
-        }
       },
       showPrevImage(currentImageIndex) {
         if (currentImageIndex > 0) {
@@ -153,9 +145,6 @@
     },
     mounted() {//eslint-disable-line
       this.loadGallery();
-      EventBus.$on('image-added', this.imageAdded);
-      EventBus.$on('load-next-image', this.showNextImage);
-      EventBus.$on('load-prev-image', this.showPrevImage);
       const gallery = document.getElementById('gallery');
 
       gallery.addEventListener('drop', addImageFromDragDrop);
@@ -165,13 +154,11 @@
       });
     },
     created() {
-      EventBus.$off('image-added', this.imageAdded);
       EventBus.$off('load-next-image', this.showNextImage);
       EventBus.$off('load-prev-image', this.showPrevImage);
       this.loaded = false;
     },
     beforeDestroy() {
-      EventBus.$off('image-added', this.imageAdded);
       EventBus.$off('load-next-image', this.showNextImage);
       EventBus.$off('load-prev-image', this.showPrevImage);
       this.loaded = false;

@@ -8,7 +8,7 @@
         </md-button>
       </router-link>
 <!-- Import Images Menu Start -->
-      <md-button class="md-icon-button" md-menu-trigger :disabled="galleriesPageActive" @click="importImages()">
+      <md-button class="md-icon-button" md-menu-trigger @click="importImages()">
         <md-icon>add_a_photo</md-icon>
         <md-tooltip md-direction="bottom">Import Images</md-tooltip>
       </md-button>
@@ -70,6 +70,7 @@
 <!-- Export Menu Start -->
       <span class="md-title" v-bind:class="{ disabled: galleriesPageActive }">{{ gallery.title }}</span>
     </md-app-toolbar>
+    <md-progress-bar v-if="imagesImported > 0" style="width:100%;" md-mode="determinate" :md-value="progressImportingImages"></md-progress-bar>
     <md-app-content>
       <router-view></router-view>
       <create-gallery-dialog></create-gallery-dialog>
@@ -95,11 +96,13 @@
     },
     data: () => ({
       gallery: {},
-      showScrollbar: false
+      showScrollbar: false,
+      progressImportingImages: 0,
+      imagesImported: 0
     }),
     computed: {
       ...mapGetters([
-        'ImageMetadata/getCount'
+        'ImageGallery/addImage'
       ]),
       galleriesPageActive: function () {//eslint-disable-line
         return (this.$route.name === 'galleries') ? 'disabled' : false;
@@ -120,12 +123,30 @@
       },
       updateGallery(gallery) {
         this.gallery = gallery;
+      },
+      async imageAdded(data) {
+        console.log('imageAdded', data);
+        await this.$store.dispatch(
+          'ImageGallery/addImage',
+          {
+            galleryId: parseInt(data.galleryId, 10),
+            image: data.image
+          }
+        );
+
+        this.progressImportingImages = (((this.imagesImported++) / data.fileCount ) * 100);//eslint-disable-line
+
+        if (data.fileCount <= this.imagesImported) {
+          this.imagesImported = 0;
+        }
       }
     },
     mounted() {
+      EventBus.$on('image-added', this.imageAdded);
       EventBus.$on('view-gallery', this.updateGallery);
     },
     beforeDestroy() {
+      EventBus.$off('image-added', this.imageAdded);
       EventBus.$off('view-gallery', this.updateGallery);
     }
   };

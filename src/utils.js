@@ -60,7 +60,18 @@ async function pathToGalleries(src) {
 
     if (pathStat.isDirectory()) {
       const files = await getImagesFromDirectory(filepath);
-      galleries.push({ title: file, files });
+      const gallery = { title: file, files: [] };
+      const checksums = {};
+      const fileCheckSums = await files.map(async (filepath) => {
+        const checksum = await checksumFile('md5', filepath);
+
+        if (!checksums[checksum]) {
+          checksums[checksum] = true;
+          gallery.files.push({ filepath, checksum });
+        }
+      });
+      await Promise.all(fileCheckSums);
+      galleries.push(gallery);
     }
   });
   await Promise.all(filePromises);

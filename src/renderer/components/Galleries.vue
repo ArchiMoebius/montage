@@ -16,6 +16,10 @@
             <md-icon>delete</md-icon>
             <md-tooltip>Delete Gallery</md-tooltip>
           </md-button>
+          <md-button class="md-icon-button" @click="deleteGallery( gallery )">
+            <md-icon>file_download</md-icon>
+            <md-tooltip>Download Gallery</md-tooltip>
+          </md-button>
         </md-card-actions>
       </md-card-media-actions>
     </md-card>

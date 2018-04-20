@@ -14,7 +14,12 @@ function createWindow() {
   logger.info('application started');
 
   mainWindow = new BrowserWindow({
-    fullscreen: true
+    fullscreen: true,
+    backgroundColor: '#070e1a',
+    titleBarStyle: 'hidden',
+    fullscreenWindowTitle: false,
+    frame: false,
+    acceptFirstMouse: true
   });
 
   mainWindow.webContents.openDevTools();
