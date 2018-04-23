@@ -170,7 +170,8 @@
         'ImageGallery/addImage'
       ]),
       ...mapActions([
-        'ImageGallery/addGallery'
+        'ImageGallery/addGallery',
+        'ImageGallery/addImageMetadata'
       ]),
       galleriesPageActive: function () {//eslint-disable-line
         return (this.$route.name === 'galleries') ? 'disabled' : false;
@@ -210,13 +211,18 @@
         });
       },
       async imageAdded(data) {
-        console.log(data);
         await this.$store.dispatch(
           'ImageGallery/addImage',
           {
             galleryId: parseInt(data.galleryId, 10),
             image: data.image
           }
+        );
+        data.metadata.hash = data.image.hash;
+
+        await this.$store.dispatch(
+          'ImageGallery/addOrUpdateImageMetadata',
+          data.metadata
         );
 
         this.progressImportingImages = (((this.imagesImported++) / data.fileCount ) * 100);//eslint-disable-line

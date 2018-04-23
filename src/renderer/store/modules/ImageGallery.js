@@ -176,29 +176,63 @@ const actions = {
       }
     );
   },
-  async addImage(context, data) {
-    let ret = false;
-
-    try {
-      ret = await dbhandle.image.where('[hash+id]').equals([data.image.hash, data.galleryId]).count();
-    } catch (e) {
-      logger.error(e);
-    }
-
-    if (ret <= 0) {
-      data.image.galleryId = data.galleryId;
+  async addOrUpdateImageMetadata(context, data) {
+    return new Promise(async (resolve, reject) => {
+      let ret;
 
       try {
-        ret = await dbhandle.image.add(data.image);
+        ret = await dbhandle.ImageMetadata.where({ hash: data.hash }).toArray();
+      } catch (e) {
+        logger.error(e);
+      }
+
+      try {
+        if (ret.length > 0 && ret[0].id) {
+          ret = await dbhandle.ImageMetadata.update(ret[0].id, data);
+        } else {
+          ret = await dbhandle.ImageMetadata.add(data);
+        }
       } catch (e) {
         logger.error(e);
       }
 
       if (ret) {
-        data.image.id = ret;
-        context.commit('ADD_IMAGE_TO_GALLERY', data);
+        resolve(ret);
+      } else {
+        reject(Error('Unable to add image'));
       }
-    }
+    });
+  },
+  async addImage(context, data) {
+    return new Promise(async (resolve, reject) => {
+      let ret = false;
+
+      try {
+        ret = await dbhandle.image.where('[hash+id]').equals([data.image.hash, data.galleryId]).count();
+      } catch (e) {
+        logger.error(e);
+      }
+
+      if (ret <= 0) {
+        data.image.galleryId = data.galleryId;
+
+        try {
+          ret = await dbhandle.image.add(data.image);
+        } catch (e) {
+          logger.error(e);
+        }
+
+        if (ret) {
+          data.image.id = ret;
+          context.commit('ADD_IMAGE_TO_GALLERY', data);
+          resolve(ret);
+        } else {
+          reject(Error('Unable to add image'));
+        }
+      } else {
+        reject(Error('Image already added'));
+      }
+    });
   },
   async updateImageThumbnail(context, imageChanges) {
     try {

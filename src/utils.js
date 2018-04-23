@@ -4,6 +4,8 @@ const path = require('path');
 
 const logger = require('electron-log');
 const sharp = require('sharp');
+const geo = require('mt-geo');
+const { ExifImage } = require('exif');
 
 function checksumFile(algorithm, path) { // https://stackoverflow.com/questions/18658612/obtaining-the-hash-of-a-file-using-the-stream-capabilities-of-crypto-module-ie#18658613
   return new Promise((resolve, reject) =>
@@ -14,6 +16,64 @@ function checksumFile(algorithm, path) { // https://stackoverflow.com/questions/
       .once('finish', function() { //eslint-disable-line
         resolve(this.read());
       }));
+}
+
+async function getImageMetadata(filepath) {
+  const ret = {};
+  return new Promise(async (resolve, reject) => {
+    let metadata;
+    try {
+      metadata = await sharp(filepath).metadata();
+      ret.width = metadata.width;
+      ret.height = metadata.height;
+      ret.density = metadata.density;
+      ret.space = metadata.space;
+      ret.channels = metadata.channels;
+    } catch (e) {
+      reject(e);
+      logger.error(e);
+    }
+
+    if (
+      metadata &&
+      metadata.exif
+    ) {
+      try {
+        new ExifImage({image: filepath}, (error, exifData) => { //eslint-disable-line
+          if (error) {
+            resolve(ret);
+            logger.error(error.message);
+          } else {
+            ret.flash = exifData.exif.Flash;
+            ret.datetime = exifData.exif.CreateDate;
+            ret.make = exifData.image.Make;
+            ret.model = exifData.image.Model;
+            ret.software = exifData.image.Software;
+
+            if (exifData.gps && exifData.gps.GPSLongitude) {
+              ret.hasLocation = true;
+              ret.longitude = geo.parseDMS(exifData.gps.GPSLongitude.join(' '));
+              ret.latitude = geo.parseDMS(exifData.gps.GPSLatitude.join(' '));
+            } else {
+              ret.hasLocation = false;
+            }
+
+            ret.isGrey = false; // TODO: implement this later
+            ret.faces = [];
+            ret.postProcessedBy = [];
+            ret.prominentColors = [];
+            ret.objects = [];
+            resolve(ret);
+          }
+        });
+      } catch (error) {
+        resolve(ret);
+        logger.error(error);
+      }
+    } else {
+      resolve(ret);
+    }
+  });
 }
 
 async function getThumbnailBlob(filepath) {
@@ -113,5 +173,6 @@ export {
   getThumbnailBlob,
   getImagesFromDirectory,
   pathToGalleries,
-  processFiles
+  processFiles,
+  getImageMetadata
 }; //eslint-disable-line
