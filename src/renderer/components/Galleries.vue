@@ -20,6 +20,10 @@
             <md-icon>file_download</md-icon>
             <md-tooltip>Download Gallery</md-tooltip>
           </md-button>
+          <md-button class="md-icon-button" @click="editGallery( gallery )">
+            <md-icon>mode_edit</md-icon>
+            <md-tooltip>Edit Gallery</md-tooltip>
+          </md-button>
         </md-card-actions>
       </md-card-media-actions>
     </md-card>
@@ -79,8 +83,8 @@
       viewGallery(gallery) {
         this.$router.push({ path: `/gallery/${gallery.id}` });
       },
-      editGallery: (image) => {
-        console.log(image);//eslint-disable-line
+      editGallery: (gallery) => {
+        EventBus.$emit('create-gallery', gallery);
       },
       async loadGalleries() {//eslint-disable-line
         await this.$store.dispatch('ImageGallery/loadGalleries');

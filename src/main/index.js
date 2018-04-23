@@ -46,6 +46,7 @@ app.on('activate', () => {
 });
 
 ipcMain.on('import-images-dialog', (event, opts) => {
+  console.log('main:index:import-images-dialog', opts);
   let filterExtensions = ['jpg', 'png', 'jpeg'];
   let filterName = 'Import selected images into this gallery';
   let filterProps = ['openFile', 'multiSelections'];

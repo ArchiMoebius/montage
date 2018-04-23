@@ -137,6 +137,7 @@ import {
 import { EventBus } from '../store/EventBus';
 
 const { ipcRenderer } = require('electron');//eslint-disable-line
+const logger = require('electron-log');
 
 export default {
   name: 'import-images-dialog',
@@ -278,22 +279,27 @@ export default {
     },
     async saveForm() {
       this.sending = true;
-
       if (
         !this.$data.withinGallery &&
-        !this.form.imageSource === '2'
+        this.form.imageSource !== '2'
       ) {
-        const ret = await this.$store.dispatch(
-          'ImageGallery/addGallery',
-          {
-            title: this.form.title,
-            tags: this.form.tags
-          }
-        );
-        this.form.galleryId = ret;
+        try {
+          const ret = await this.$store.dispatch(
+            'ImageGallery/addGallery',
+            {
+              title: this.form.title,
+              tags: this.form.tags
+            }
+          );
+          console.log('created a new gallery: ', ret);
+          this.form.galleryId = ret;
+        } catch (e) {
+          logger.error(e);
+        }
       } else {
         this.form.galleryId = this.$route.params.id;
       }
+
       try {
         ipcRenderer.send('import-images-dialog', this.form);
         this.showDialog = false;

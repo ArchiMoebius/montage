@@ -1,7 +1,8 @@
 <template>
   <md-dialog :md-active.sync="showDialog" style="width:40%;">
     <form novalidate class="md-layout">
-      <md-dialog-title>Create New Gallery</md-dialog-title>
+      <md-dialog-title v-if="!form.id">Create Gallery</md-dialog-title>
+      <md-dialog-title v-if="form.id">Edit Gallery</md-dialog-title>
       <md-card class="md-layout-item md-size-100">
         <md-card-content>
           <div class="md-layout md-gutter">
@@ -26,7 +27,7 @@
       </md-card>
       <md-dialog-actions>
         <md-button class="md-primary" @click="showDialog = false">Close</md-button>
-        <md-button class="md-primary" @click="validateUser" :disabled="sending">Save</md-button>
+        <md-button class="md-primary" @click="validateUser" :disabled="sending">{{ commitButtonText }}</md-button>
       </md-dialog-actions>
     </form>
   </md-dialog>
@@ -48,6 +49,11 @@ import { EventBus } from '../store/EventBus';
 export default {
   name: 'create-gallery-dialog',
   mixins: [validationMixin],
+  computed: {
+    commitButtonText() {
+      return (this.form.id) ? 'Update' : 'Save';
+    }
+  },
   created: function() { //eslint-disable-line
     EventBus.$on('create-gallery', this.createGallery);
   },
@@ -116,7 +122,12 @@ export default {
         this.saveForm();
       }
     },
-    createGallery: function() { //eslint-disable-line
+    createGallery: function(data) { //eslint-disable-line
+      if (data) {
+        this.form.id = data.id;
+        this.form.title = data.title;
+        this.form.tags = data.tags;
+      }
       this.$data.showDialog = true;
     }
   },

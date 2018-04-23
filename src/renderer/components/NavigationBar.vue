@@ -26,9 +26,9 @@
             <span>New</span>
             <md-tooltip md-direction="right">Create new gallery</md-tooltip>
           </md-menu-item>
-          <md-menu-item @click="notImplementedYet()" :disabled="galleriesPageActive">
+          <md-menu-item @click="renameGallery()" :disabled="galleriesPageActive">
             <md-icon>mode_edit</md-icon>
-            <span>Rename</span>
+            <span>Edit</span>
             <md-tooltip v-bind:class="{ disabled: galleriesPageActive }" md-direction="right">Edit Gallery</md-tooltip>
           </md-menu-item>
           <md-menu-item @click="deleteGallery()" :disabled="galleriesPageActive">
@@ -85,7 +85,7 @@
   import { mapGetters, mapActions } from 'vuex';
 
   import { EventBus } from '../store/EventBus';
-  import { checksumFile, getThumbnailBlob } from '../../utils';
+  import { checksumFile, getThumbnailBlob, getImageMetadata } from '../../utils';
 
   import CreateGalleryDialog from './CreateGalleryDialog.vue';
   import ShowImageDialog from './ShowImageDialog.vue';
@@ -95,7 +95,7 @@
 
   async function addImageFromFilepath(data) {//eslint-disable-line
     const reader = new FileReader();
-    reader.onloadend = function() {//eslint-disable-line
+    reader.onloadend = async function() {//eslint-disable-line
       let image = {//eslint-disable-line
         src: data.filepath,
         type: 0,
@@ -104,9 +104,11 @@
         hasBeenExported: 0,
         hash: data.checksum
       };
+
       EventBus.$emit(
         'image-added',
         {
+          metadata: await getImageMetadata(data.filepath),
           image,
           fileCount: data.fileCount,
           galleryId: data.opts.galleryId
@@ -181,6 +183,9 @@
       createGallery() {
         EventBus.$emit('create-gallery');
       },
+      renameGallery() {
+        EventBus.$emit('create-gallery', this.gallery);
+      },
       deleteGallery() {
         EventBus.$emit('delete-gallery', this.gallery);
       },
@@ -205,6 +210,7 @@
         });
       },
       async imageAdded(data) {
+        console.log(data);
         await this.$store.dispatch(
           'ImageGallery/addImage',
           {

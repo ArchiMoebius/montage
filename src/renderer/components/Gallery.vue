@@ -1,7 +1,7 @@
 <template>
   <div class="md-layout md-alignment-top-center" id="gallery">
     <div
-      v-if="loaded && gallery.images.length > 0"
+      v-if="loaded && gallery && gallery.images.length > 0"
       class="md-layout-item md-size-10"
       v-for="image, imageIndex in gallery.images"
       :key="image.id"
@@ -10,7 +10,7 @@
     </div>
     <div style="width:100vw;height:90vh;" class="md-layout md-gutter md-alignment-center">
       <md-empty-state
-        v-if="loaded && gallery.images.length <= 0"
+        v-if="loaded && (!gallery || gallery.images.length <= 0)"
         md-rounded
         md-icon="add_a_photo"
         md-label="Gallery is empty..."

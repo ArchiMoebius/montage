@@ -45,6 +45,17 @@ const mutations = {
   ADD_GALLERY(state, data) {
     state.galleries.push(data);
   },
+  UPDATE_GALLERY(state, data) { // TODO: better way todo this?
+    state.gallery.title = data.title;
+    state.gallery.tags = data.tags;
+    state.galleries = state.galleries.map((gallery) => {
+      if (gallery.id === data.id) {
+        gallery.title = data.title;
+        gallery.tags = data.tags;
+      }
+      return gallery;
+    });
+  },
   REMOVE_GALLERY(state, data) {
     state.galleries = state.galleries.filter(gallery => gallery.id !== data.id);
     state.gallery.images = [];
@@ -73,6 +84,20 @@ const setters = {
 };
 
 const actions = {
+  async updateGallery(context, data) {
+    try {
+      const galleryId = data.id;
+      delete data.id;
+      await dbhandle.gallery.update(galleryId, data);
+      data.id = galleryId;
+      context.commit(
+        'UPDATE_GALLERY',
+        data
+      );
+    } catch (e) {
+      logger.error(e);
+    }
+  },
   addGallery(context, data) {
     return new Promise(async (resolve, reject) => {
       let ret = false;
