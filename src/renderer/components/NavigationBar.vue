@@ -104,11 +104,16 @@
         hasBeenExported: 0,
         hash: data.checksum
       };
+      let metadata = false;
+
+      if (data.opts.importExif) {
+        metadata = await getImageMetadata(data.filepath);
+      }
 
       EventBus.$emit(
         'image-added',
         {
-          metadata: await getImageMetadata(data.filepath),
+          metadata,
           image,
           fileCount: data.fileCount,
           galleryId: data.opts.galleryId
@@ -218,12 +223,15 @@
             image: data.image
           }
         );
-        data.metadata.hash = data.image.hash;
 
-        await this.$store.dispatch(
-          'ImageGallery/addOrUpdateImageMetadata',
-          data.metadata
-        );
+        if (data.metadata) {
+          data.metadata.hash = data.image.hash;
+
+          await this.$store.dispatch(
+            'ImageGallery/addOrUpdateImageMetadata',
+            data.metadata
+          );
+        }
 
         this.progressImportingImages = (((this.imagesImported++) / data.fileCount ) * 100);//eslint-disable-line
 

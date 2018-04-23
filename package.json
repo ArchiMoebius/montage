@@ -18,6 +18,7 @@
     "dexie": "^2.0.2",
     "electron-log": "^2.2.14",
     "exif": "^0.6.0",
+    "moment": "^2.22.1",
     "mt-geo": "^1.0.1",
     "sharp": "^0.20.1",
     "source-map-support": "^0.5.4",

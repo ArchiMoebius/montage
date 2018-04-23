@@ -161,7 +161,14 @@ async function processFiles(paths) {
 
     if (!checksums[checksum]) {
       checksums[checksum] = true;
-      filesToProcess.push({ checksum, filepath });
+      const fileStat = fs.statSync(filepath);
+      filesToProcess.push({
+        checksum,
+        filepath,
+        mtime: fileStat.mtime,
+        atime: fileStat.atime,
+        ctime: fileStat.ctime
+      });
     }
   });
   await Promise.all(filePromises);

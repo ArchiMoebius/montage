@@ -3,6 +3,7 @@ import { app, ipcMain, dialog, BrowserWindow } from 'electron';// eslint-disable
 import { processFiles, pathToGalleries } from '../utils';
 
 const logger = require('electron-log');
+const moment = require('moment');
 
 let mainWindow;
 
@@ -77,20 +78,58 @@ ipcMain.on('import-images-dialog', (event, opts) => {
         opts.imageSource === '0' ||
         opts.imageSource === '1'
       ) {
-        const filesToProcess = await processFiles(paths);
+        let filesToProcess = await processFiles(paths);
 
-        const fileCount = filesToProcess.length;
-        filesToProcess.forEach((fileItem) => {
-          event.sender.send(
-            'images-added',
-            {
-              filepath: fileItem.filepath,
-              checksum: fileItem.checksum,
-              fileCount,
-              opts
-            }
-          );
-        });
+        if (opts.filterImages) {
+          const filterIndexs = {
+            '0': 'mtime',//eslint-disable-line
+            '1': 'atime',//eslint-disable-line
+            '2': 'ctime',//eslint-disable-line
+            '3': 'datetime'//eslint-disable-line
+          };
+          const startDate = moment(opts.startDate);
+          const endDate = moment(opts.endDate);
+          filesToProcess = filesToProcess.filter((item) => {//eslint-disable-line
+            return (
+              moment(item[filterIndexs[opts.startDateFilter]]).isBetween(startDate, endDate) &&
+              moment(item[filterIndexs[opts.endDateFilter]]).isBetween(startDate, endDate)
+            );
+          });
+        }
+
+        if (opts.groupImagesByDatetime) {
+          const galleries = {};
+          filesToProcess.forEach((item) => {//eslint-disable-line
+
+          });
+          galleries.forEach((gallery) => {
+            event.sender.send(
+              'add-gallery',
+              {
+                gallery,
+                opts
+              }
+            );
+          });
+        }
+
+        if (
+          filesToProcess.length > 0 &&
+          !opts.groupImagesByDatetime
+        ) {
+          const fileCount = filesToProcess.length;
+          filesToProcess.forEach((fileItem) => {
+            event.sender.send(
+              'images-added',
+              {
+                filepath: fileItem.filepath,
+                checksum: fileItem.checksum,
+                fileCount,
+                opts
+              }
+            );
+          });
+        }
       }
 
       if (opts.imageSource === '2') {

@@ -16,7 +16,7 @@
               <span class="md-error" v-if="!$v.form.imageSource.required">The Image Source is required</span>
             </md-field>
           </div>
-          <div class="md-layout-item md-size-90" v-if="!withinGallery && form.imageSource !== '2'">
+          <div class="md-layout-item md-size-90" v-if="!withinGallery && form.imageSource !== '2' && !form.groupImagesByDatetime">
             <div>
               <md-field :class="getValidationClass('title')">
                 <label for="title">Title</label>
@@ -179,7 +179,8 @@ export default {
 
             if (
               !this.$data.withinGallery &&
-              this.form.imageSource !== '2'
+              this.form.imageSource !== '2' &&
+              !this.form.groupImagesByDatetime
             ) {
               if (this.form.title.length <= 0) {
                 state = false;
@@ -195,7 +196,8 @@ export default {
 
             if (
               !this.$data.withinGallery &&
-              this.form.imageSource !== '2'
+              this.form.imageSource !== '2' &&
+              !this.form.groupImagesByDatetime
             ) {
               if (this.form.tags.length <= 0) {
                 state = false;
