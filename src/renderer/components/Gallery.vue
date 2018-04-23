@@ -22,78 +22,8 @@
 
 <script>
   import { mapGetters, mapActions } from 'vuex';
-  import { basename } from 'path';
 
   import { EventBus } from '../store/EventBus';
-  import { checksumFile, getThumbnailBlob } from '../../utils';
-
-  const { ipcRenderer } = require('electron');//eslint-disable-line
-
-  async function addImageFromFilepath(data) {//eslint-disable-line
-    const reader = new FileReader();
-    reader.onloadend = function() {//eslint-disable-line
-      let image = {//eslint-disable-line
-        src: data.filepath,
-        type: 0,
-        alt: basename(data.filepath),
-        thumbnail: reader.result,
-        hasBeenExported: 0,
-        hash: data.checksum
-      };
-      console.log(
-        'emitting on eventbus',
-        {
-          image,
-          fileCount: data.fileCount,
-          galleryId: data.opts.galleryId
-        }
-      );
-      EventBus.$emit(
-        'image-added',
-        {
-          image,
-          fileCount: data.fileCount,
-          galleryId: data.opts.galleryId
-        }
-      );
-    };
-    const thumbnailBlob = await getThumbnailBlob(data.filepath);
-    reader.readAsDataURL(thumbnailBlob);
-  }
-
-  ipcRenderer.on('images-added', async function(evt, data) {//eslint-disable-line
-    addImageFromFilepath(data);
-  });
-
-  ipcRenderer.on('add-gallery', async function(evt, data) {//eslint-disable-line
-    console.log(data);
-    // addImageFromFilepath(data);
-  });
-
-  async function addImageFromDragDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    const filesToAdd = [];
-    const checksums = {};
-
-    for (const f of e.dataTransfer.files) {//eslint-disable-line
-      const supportedFileTypes = /(\.jpg|\.jpeg|\.png)$/i;
-
-      if (supportedFileTypes.test(f.path)) {
-        const checksum = await checksumFile('md5', f.path);//eslint-disable-line
-
-        if (!checksums[checksum]) {
-          checksums[checksum] = true;
-          filesToAdd.push({ filepath: f.path, checksum });
-        }
-      }
-    }
-    const fileCount = filesToAdd.length;
-    filesToAdd.forEach((item) => {
-      item.fileCount = fileCount;
-      addImageFromFilepath(item);
-    });
-  }
 
   export default {
     name: 'gallery',
@@ -145,17 +75,10 @@
     },
     mounted() {//eslint-disable-line
       this.loadGallery();
-      const gallery = document.getElementById('gallery');
-
-      gallery.addEventListener('drop', addImageFromDragDrop);
-      gallery.addEventListener('dragover', function (e) {//eslint-disable-line
-        e.preventDefault();
-        e.stopPropagation();
-      });
     },
     created() {
-      EventBus.$off('load-next-image', this.showNextImage);
-      EventBus.$off('load-prev-image', this.showPrevImage);
+      EventBus.$on('load-next-image', this.showNextImage);
+      EventBus.$on('load-prev-image', this.showPrevImage);
       this.loaded = false;
     },
     beforeDestroy() {

@@ -250,7 +250,10 @@ export default {
               }
             }
 
-            if (this.form.imageSource === '2') {
+            if (
+              this.form.imageSource === '2' &&
+              this.form.groupImagesByDatetime
+            ) {
               this.form.imageSource = '0';
             }
             return state;
@@ -276,7 +279,10 @@ export default {
     async saveForm() {
       this.sending = true;
 
-      if (!this.$data.withinGallery) {
+      if (
+        !this.$data.withinGallery &&
+        !this.form.imageSource === '2'
+      ) {
         const ret = await this.$store.dispatch(
           'ImageGallery/addGallery',
           {

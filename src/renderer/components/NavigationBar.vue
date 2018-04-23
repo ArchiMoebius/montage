@@ -71,7 +71,7 @@
       <span class="md-title" v-bind:class="{ disabled: galleriesPageActive }">{{ gallery.title }}</span>
     </md-app-toolbar>
     <md-progress-bar v-if="imagesImported > 0" style="width:100%;" md-mode="determinate" :md-value="progressImportingImages"></md-progress-bar>
-    <md-app-content>
+    <md-app-content id="appContentCore">
       <router-view></router-view>
       <create-gallery-dialog></create-gallery-dialog>
       <show-image-dialog></show-image-dialog>
@@ -81,11 +81,74 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex';
+  import { basename } from 'path';
+  import { mapGetters, mapActions } from 'vuex';
+
   import { EventBus } from '../store/EventBus';
+  import { checksumFile, getThumbnailBlob } from '../../utils';
+
   import CreateGalleryDialog from './CreateGalleryDialog.vue';
   import ShowImageDialog from './ShowImageDialog.vue';
   import ImportImagesDialog from './ImportImagesDialog.vue';
+
+  const { ipcRenderer } = require('electron');//eslint-disable-line
+
+  async function addImageFromFilepath(data) {//eslint-disable-line
+    const reader = new FileReader();
+    reader.onloadend = function() {//eslint-disable-line
+      let image = {//eslint-disable-line
+        src: data.filepath,
+        type: 0,
+        alt: basename(data.filepath),
+        thumbnail: reader.result,
+        hasBeenExported: 0,
+        hash: data.checksum
+      };
+      EventBus.$emit(
+        'image-added',
+        {
+          image,
+          fileCount: data.fileCount,
+          galleryId: data.opts.galleryId
+        }
+      );
+    };
+    const thumbnailBlob = await getThumbnailBlob(data.filepath);
+    reader.readAsDataURL(thumbnailBlob);
+  }
+
+  ipcRenderer.on('images-added', async function(evt, data) {//eslint-disable-line
+    addImageFromFilepath(data);
+  });
+
+  ipcRenderer.on('add-gallery', async function(evt, data) {//eslint-disable-line
+    EventBus.$emit('add-gallery', data);
+  });
+
+  async function addImageFromDragDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const filesToAdd = [];
+    const checksums = {};
+
+    for (const f of e.dataTransfer.files) {//eslint-disable-line
+      const supportedFileTypes = /(\.jpg|\.jpeg|\.png)$/i;
+
+      if (supportedFileTypes.test(f.path)) {
+        const checksum = await checksumFile('md5', f.path);//eslint-disable-line
+
+        if (!checksums[checksum]) {
+          checksums[checksum] = true;
+          filesToAdd.push({ filepath: f.path, checksum });
+        }
+      }
+    }
+    const fileCount = filesToAdd.length;
+    filesToAdd.forEach((item) => {
+      item.fileCount = fileCount;
+      addImageFromFilepath(item);
+    });
+  }
 
   export default {
     name: 'navigation-bar',
@@ -103,6 +166,9 @@
     computed: {
       ...mapGetters([
         'ImageGallery/addImage'
+      ]),
+      ...mapActions([
+        'ImageGallery/addGallery'
       ]),
       galleriesPageActive: function () {//eslint-disable-line
         return (this.$route.name === 'galleries') ? 'disabled' : false;
@@ -124,8 +190,21 @@
       updateGallery(gallery) {
         this.gallery = gallery;
       },
+      async addGallery(data) {
+        data.opts.galleryId = await this.$store.dispatch(
+          'ImageGallery/addGallery',
+          {
+            title: data.gallery.title,
+            tags: ['automatic']
+          }
+        );
+        data.gallery.files.forEach((item) => {
+          item.fileCount = data.gallery.files.length;
+          item.opts = data.opts;
+          addImageFromFilepath(item);
+        });
+      },
       async imageAdded(data) {
-        console.log('imageAdded', data);
         await this.$store.dispatch(
           'ImageGallery/addImage',
           {
@@ -142,10 +221,20 @@
       }
     },
     mounted() {
+      EventBus.$on('add-gallery', this.addGallery);
       EventBus.$on('image-added', this.imageAdded);
       EventBus.$on('view-gallery', this.updateGallery);
+
+      const appCore = document.getElementById('appContentCore');
+
+      appCore.addEventListener('drop', addImageFromDragDrop);
+      appCore.addEventListener('dragover', function (e) {//eslint-disable-line
+        e.preventDefault();
+        e.stopPropagation();
+      });
     },
     beforeDestroy() {
+      EventBus.$off('add-gallery', this.addGallery);
       EventBus.$off('image-added', this.imageAdded);
       EventBus.$off('view-gallery', this.updateGallery);
     }
