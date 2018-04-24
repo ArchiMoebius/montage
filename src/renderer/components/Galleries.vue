@@ -16,7 +16,7 @@
             <md-icon>delete</md-icon>
             <md-tooltip>Delete Gallery</md-tooltip>
           </md-button>
-          <md-button class="md-icon-button" @click="deleteGallery( gallery )">
+          <md-button class="md-icon-button" @click="exportGallery( gallery )">
             <md-icon>file_download</md-icon>
             <md-tooltip>Download Gallery</md-tooltip>
           </md-button>
@@ -82,6 +82,9 @@
       },
       viewGallery(gallery) {
         this.$router.push({ path: `/gallery/${gallery.id}` });
+      },
+      exportGallery: (gallery) => {
+        EventBus.$emit('export-gallery', gallery);
       },
       editGallery: (gallery) => {
         EventBus.$emit('create-gallery', gallery);

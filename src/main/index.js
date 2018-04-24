@@ -1,6 +1,6 @@
 import { app, ipcMain, dialog, BrowserWindow } from 'electron';// eslint-disable-line
 
-import { processFiles, pathToGalleries } from '../utils';
+import { exportAsArchive, processFiles, pathToGalleries } from '../utils';
 
 const logger = require('electron-log');
 const moment = require('moment');
@@ -43,6 +43,27 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (mainWindow === null) {
     createWindow();
+  }
+});
+
+ipcMain.on('close', () => {
+  app.quit();
+});
+
+ipcMain.on('export-gallery-dialog', async (event, opts) => {
+  const outputFilepath = await dialog.showSaveDialog(false, {
+    title: 'Export Gallery',
+    defaultPath: `${opts.title}.zip`,
+    filters: [
+      {
+        name: 'Save Gallery as ZIP',
+        extensions: ['zip']
+      }
+    ]
+  });
+
+  if (outputFilepath) {
+    await exportAsArchive(opts.paths, outputFilepath);
   }
 });
 

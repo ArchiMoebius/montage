@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+const archiver = require('archiver');
 const logger = require('electron-log');
 const sharp = require('sharp');
 const geo = require('mt-geo');
@@ -16,6 +17,43 @@ function checksumFile(algorithm, path) { // https://stackoverflow.com/questions/
       .once('finish', function() { //eslint-disable-line
         resolve(this.read());
       }));
+}
+
+async function exportAsArchive(paths, outputFilepath) {
+  return new Promise((resolve, reject) => {
+    if (outputFilepath.indexOf('.') === -1) {
+      outputFilepath = `${outputFilepath}.zip`;
+    }
+    const output = fs.createWriteStream(outputFilepath);
+    const archive = archiver('zip', {
+      zlib: {
+        level: 9
+      }
+    });
+
+    output.on('end', () => {
+      resolve(outputFilepath);
+    });
+
+    archive.on('warning', (err) => {
+      if (err.code === 'ENOENT') {
+        logger.error(err);
+      } else {
+        reject(err);
+      }
+    });
+
+    // good practice to catch this error explicitly
+    archive.on('error', reject);
+
+    archive.pipe(output);
+
+    paths.forEach((filepath) => {
+      archive.file(filepath, { name: path.basename(filepath) });
+    });
+
+    archive.finalize();
+  });
 }
 
 async function getImageMetadata(filepath) {
@@ -181,5 +219,6 @@ export {
   getImagesFromDirectory,
   pathToGalleries,
   processFiles,
-  getImageMetadata
+  getImageMetadata,
+  exportAsArchive
 }; //eslint-disable-line

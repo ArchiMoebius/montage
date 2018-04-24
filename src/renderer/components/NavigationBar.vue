@@ -50,7 +50,7 @@
         </md-button>
         <md-menu-content>
           <span style="margin-left:10px;" class="md-title">Export To</span>
-          <md-menu-item @click="notImplementedYet()">
+          <md-menu-item @click="exportGallery(gallery)">
             <md-icon>computer</md-icon>
             <span>Save to disk</span>
             <md-tooltip md-direction="right">Save gallery to your harddrive</md-tooltip>
@@ -69,6 +69,11 @@
       </md-menu>
 <!-- Export Menu Start -->
       <span class="md-title" v-bind:class="{ disabled: galleriesPageActive }">{{ gallery.title }}</span>
+      <span class="flex"></span>
+      <md-button class="md-icon-button" @click="closeApp()">
+        <md-icon>close</md-icon>
+        <md-tooltip md-direction="bottom">Exit Montage</md-tooltip>
+      </md-button>
     </md-app-toolbar>
     <md-progress-bar v-if="imagesImported > 0" style="width:100%;" md-mode="determinate" :md-value="progressImportingImages"></md-progress-bar>
     <md-app-content id="appContentCore">
@@ -92,6 +97,7 @@
   import ImportImagesDialog from './ImportImagesDialog.vue';
 
   const { ipcRenderer } = require('electron');//eslint-disable-line
+  const logger = require('electron-log');
 
   async function addImageFromFilepath(data) {//eslint-disable-line
     const reader = new FileReader();
@@ -165,24 +171,28 @@
       ImportImagesDialog
     },
     data: () => ({
-      gallery: {},
       showScrollbar: false,
       progressImportingImages: 0,
       imagesImported: 0
     }),
     computed: {
-      ...mapGetters([
-        'ImageGallery/addImage'
-      ]),
+      ...mapGetters({
+        'ImageGallery/addImage': 'ImageGallery/addImage',
+        gallery: 'ImageGallery/gallery'
+      }),
       ...mapActions([
         'ImageGallery/addGallery',
-        'ImageGallery/addImageMetadata'
+        'ImageGallery/addImageMetadata',
+        'ImageGallery/loadGallery'
       ]),
       galleriesPageActive: function () {//eslint-disable-line
         return (this.$route.name === 'galleries') ? 'disabled' : false;
       }
     },
     methods: {
+      closeApp() {
+        ipcRenderer.send('close');
+      },
       importImages() {
         EventBus.$emit('import-images');
       },
@@ -194,6 +204,19 @@
       },
       deleteGallery() {
         EventBus.$emit('delete-gallery', this.gallery);
+      },
+      async exportGallery(gallery) {
+        try {
+          await this.$store.dispatch('ImageGallery/loadGallery', parseInt(gallery.id, 10));
+          const paths = this.gallery.images.map(imageItem => imageItem.src);
+          ipcRenderer.send('export-gallery-dialog', { paths, title: this.gallery.title });
+        } catch (e) {
+          new Notification({//eslint-disable-line
+            title: 'Error',
+            body: 'Unable to export this gallery...'
+          });
+          logger.error(e);
+        }
       },
       notImplementedYet: () => {
         alert('this feature is not yet implemented...');//eslint-disable-line
@@ -244,6 +267,7 @@
       EventBus.$on('add-gallery', this.addGallery);
       EventBus.$on('image-added', this.imageAdded);
       EventBus.$on('view-gallery', this.updateGallery);
+      EventBus.$on('export-gallery', this.exportGallery);
 
       const appCore = document.getElementById('appContentCore');
 
@@ -257,6 +281,7 @@
       EventBus.$off('add-gallery', this.addGallery);
       EventBus.$off('image-added', this.imageAdded);
       EventBus.$off('view-gallery', this.updateGallery);
+      EventBus.$off('export-gallery', this.exportGallery);
     }
   };
 </script>
@@ -304,5 +329,10 @@
 
   .md-empty-state {
     background-color: #356dc9 !important;
+  }
+
+  .flex {
+    flex: 1;
+    display: inline-block;
   }
 </style>

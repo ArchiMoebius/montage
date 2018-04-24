@@ -78,7 +78,7 @@ const getters = {
 };
 
 const setters = {
-  addGallery() {
+  gallery() {
     return false;
   }
 };
