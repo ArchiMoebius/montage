@@ -283,7 +283,8 @@ export default {
       this.sending = true;
       if (
         !this.$data.withinGallery &&
-        this.form.imageSource !== '2'
+        this.form.imageSource !== '2' &&
+        !this.form.groupImagesByDatetime
       ) {
         try {
           const ret = await this.$store.dispatch(
@@ -293,7 +294,6 @@ export default {
               tags: this.form.tags
             }
           );
-          console.log('created a new gallery: ', ret);
           this.form.galleryId = ret;
         } catch (e) {
           logger.error(e);

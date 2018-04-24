@@ -47,7 +47,6 @@ app.on('activate', () => {
 });
 
 ipcMain.on('import-images-dialog', (event, opts) => {
-  console.log('main:index:import-images-dialog', opts);
   let filterExtensions = ['jpg', 'png', 'jpeg'];
   let filterName = 'Import selected images into this gallery';
   let filterProps = ['openFile', 'multiSelections'];
@@ -80,13 +79,14 @@ ipcMain.on('import-images-dialog', (event, opts) => {
       ) {
         let filesToProcess = await processFiles(paths);
 
+        const filterIndexs = {
+          '0': 'mtime',//eslint-disable-line
+          '1': 'atime',//eslint-disable-line
+          '2': 'ctime',//eslint-disable-line
+          '3': 'datetime'//eslint-disable-line
+        };
+
         if (opts.filterImages) {
-          const filterIndexs = {
-            '0': 'mtime',//eslint-disable-line
-            '1': 'atime',//eslint-disable-line
-            '2': 'ctime',//eslint-disable-line
-            '3': 'datetime'//eslint-disable-line
-          };
           const startDate = moment(opts.startDate);
           const endDate = moment(opts.endDate);
           filesToProcess = filesToProcess.filter((item) => {//eslint-disable-line
@@ -98,9 +98,38 @@ ipcMain.on('import-images-dialog', (event, opts) => {
         }
 
         if (opts.groupImagesByDatetime) {
-          const galleries = {};
+          const galleries = [{
+            startDate: moment(filesToProcess[0][filterIndexs[opts.imageGroupingDate]]),
+            endDate: moment(filesToProcess[0][filterIndexs[opts.imageGroupingDate]]).add(opts.imageGroupingDays, 'days'),
+            title: 'Gallery 1',
+            files: [
+              filesToProcess[0]
+            ]
+          }];
+          filesToProcess.shift();
           filesToProcess.forEach((item) => {//eslint-disable-line
+            const galleryFound = galleries.find((gallery) => {
+              const itemDate = moment(item[filterIndexs[opts.imageGroupingDate]]);
+              const foundHome = itemDate.isBetween(gallery.startDate, gallery.endDate);
 
+              if (foundHome) {
+                gallery.endDate = itemDate.add(opts.imageGroupingDays, 'days');
+                gallery.files.push(item);
+              }
+
+              return foundHome;
+            });
+
+            if (typeof (galleryFound) === 'undefined') {
+              galleries.push({
+                startDate: moment(item[filterIndexs[opts.imageGroupingDate]]),
+                endDate: moment(item[filterIndexs[opts.imageGroupingDate]]).add(opts.imageGroupingDays, 'days'),
+                title: `Gallery ${galleries.length + 1}`,
+                files: [
+                  item
+                ]
+              });
+            }
           });
           galleries.forEach((gallery) => {
             event.sender.send(
