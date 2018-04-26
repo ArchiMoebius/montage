@@ -70,6 +70,14 @@
 <!-- Export Menu Start -->
       <span class="md-title" v-bind:class="{ disabled: galleriesPageActive }">{{ gallery.title }}</span>
       <span class="flex"></span>
+      <md-button class="md-icon-button" @click="maximizeApp()" v-if="!maximized">
+        <md-icon>settings_overscan</md-icon>
+        <md-tooltip md-direction="bottom">Maximize Window</md-tooltip>
+      </md-button>
+      <md-button class="md-icon-button" @click="windowApp()" v-if="maximized">
+        <md-icon>crop_square</md-icon>
+        <md-tooltip md-direction="bottom">Un-Maximize Window</md-tooltip>
+      </md-button>
       <md-button class="md-icon-button" @click="closeApp()">
         <md-icon>close</md-icon>
         <md-tooltip md-direction="bottom">Exit Montage</md-tooltip>
@@ -86,7 +94,7 @@
 </template>
 
 <script>
-  import { basename } from 'path';
+  import { join, basename } from 'path';
   import { mapGetters, mapActions } from 'vuex';
 
   import { EventBus } from '../store/EventBus';
@@ -173,15 +181,18 @@
     data: () => ({
       showScrollbar: false,
       progressImportingImages: 0,
-      imagesImported: 0
+      imagesImported: 0,
+      gallery: [],
+      maximized: false
     }),
     computed: {
-      ...mapGetters({
-        'ImageGallery/addImage': 'ImageGallery/addImage',
-        gallery: 'ImageGallery/gallery'
-      }),
+      ...mapGetters([
+        'ImageGallery/addImage',
+        'ImageGallery/gallery'
+      ]),
       ...mapActions([
         'ImageGallery/addGallery',
+        'ImageGallery/updateGallery',
         'ImageGallery/addImageMetadata',
         'ImageGallery/loadGallery'
       ]),
@@ -192,6 +203,14 @@
     methods: {
       closeApp() {
         ipcRenderer.send('close');
+      },
+      maximizeApp() {
+        ipcRenderer.send('window-all-maximize');
+        this.maximized = true;
+      },
+      windowApp() {
+        ipcRenderer.send('window-all-unmaximize');
+        this.maximized = false;
       },
       importImages() {
         EventBus.$emit('import-images');
@@ -211,10 +230,12 @@
           const paths = this.gallery.images.map(imageItem => imageItem.src);
           ipcRenderer.send('export-gallery-dialog', { paths, title: this.gallery.title });
         } catch (e) {
-          new Notification({//eslint-disable-line
-            title: 'Error',
-            body: 'Unable to export this gallery...'
-          });
+          new Notification(//eslint-disable-line
+            'Error',
+            {
+              body: 'Unable to export this gallery...'
+            }
+          );
           logger.error(e);
         }
       },
@@ -223,6 +244,31 @@
       },
       updateGallery(gallery) {
         this.gallery = gallery;
+      },
+      async setGalleryThumbnail(thumbnail) {
+        try {
+          await this.$store.dispatch(
+            'ImageGallery/updateGallery',
+            {
+              id: this.gallery.id,
+              thumbnail
+            }
+          );
+          new Notification(//eslint-disable-line
+            'Success',
+            {
+              body: 'gallery thumbnail updated!',
+              icon: join(__static, 'check.png')
+            }
+          );
+        } catch (e) {
+          new Notification(//eslint-disable-line
+            'Error',
+            {
+              body: 'unable to update gallery thumbnail...'
+            }
+          );
+        }
       },
       async addGallery(data) {
         data.opts.galleryId = await this.$store.dispatch(
@@ -268,6 +314,7 @@
       EventBus.$on('image-added', this.imageAdded);
       EventBus.$on('view-gallery', this.updateGallery);
       EventBus.$on('export-gallery', this.exportGallery);
+      EventBus.$on('set-gallery-thumbnail', this.setGalleryThumbnail);
 
       const appCore = document.getElementById('appContentCore');
 
@@ -282,6 +329,7 @@
       EventBus.$off('image-added', this.imageAdded);
       EventBus.$off('view-gallery', this.updateGallery);
       EventBus.$off('export-gallery', this.exportGallery);
+      EventBus.$off('set-gallery-thumbnail', this.setGalleryThumbnail);
     }
   };
 </script>
@@ -319,7 +367,7 @@
 
   img.thumbnail {
     padding: 1px;
-    border: 1px solid #0a1425;
+    border: 1px solid #070e1a;
     cursor: pointer;
   }
 
@@ -334,5 +382,22 @@
   .flex {
     flex: 1;
     display: inline-block;
+  }
+
+  .md-app-toolbar {
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
+  }
+
+  button {
+    -webkit-app-region: no-drag;
+  }
+
+  .md-menu {
+    -webkit-app-region: no-drag;
+  }
+
+  .md-app-scroller {
+    overflow: hidden !important;
   }
 </style>

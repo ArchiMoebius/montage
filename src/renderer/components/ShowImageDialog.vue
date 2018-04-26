@@ -6,6 +6,10 @@
       </md-card-content>
     </md-card>
     <md-dialog-actions style="float:left;display:block;">
+      <md-button style="float:left;" class="md-primary" @click="setAsGalleryCover( image )">
+        <md-icon>add_to_queue</md-icon>
+        <md-tooltip>Set image as gallery cover</md-tooltip>
+      </md-button>
       <md-button style="float:left;" class="md-accent" @click="deleteImage( image )">
         <md-icon>delete</md-icon>
         <md-tooltip>Delete Image</md-tooltip>
@@ -146,6 +150,9 @@ export default {
         this.showDialog = false;
         this.image = {};
       }
+    },
+    setAsGalleryCover(image) {
+      EventBus.$emit('set-gallery-thumbnail', image.thumbnail);
     },
     viewImage(image) {
       this.image = image;

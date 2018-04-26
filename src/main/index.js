@@ -15,11 +15,16 @@ function createWindow() {
   logger.info('application started');
 
   mainWindow = new BrowserWindow({
-    fullscreen: true,
+    center: true,
+    minWidth: 1024,
+    minHeight: 768,
+    fullscreen: false,
+    resizable: true,
     backgroundColor: '#070e1a',
     titleBarStyle: 'hidden',
     fullscreenWindowTitle: false,
     frame: false,
+    autoHideMenuBar: true,
     acceptFirstMouse: true
   });
 
@@ -35,9 +40,15 @@ function createWindow() {
 app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
+});
+
+app.on('window-all-maximize', () => {
+  mainWindow.maximize();
+});
+
+app.on('window-all-unmaximize', () => {
+  mainWindow.unmaximize();
 });
 
 app.on('activate', () => {
