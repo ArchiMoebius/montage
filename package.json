@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "npm run lint && electron-webpack dev",
     "compile": "npm run lint && electron-webpack",
-    "dist": "npm run lint && npm run compile && ./node_modules/.bin/electron-builder",
+    "dist": "npm run compile && ./node_modules/.bin/electron-builder",
     "dist:dir": "npm run lint && npm dist --dir -c.compression=store -c.mac.identity=null",
     "lint": "./node_modules/.bin/eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter src"
   },
@@ -52,8 +52,21 @@
   },
   "build": {
     "asar": false,
+    "productName": "Montage",
+    "copyright": "Copyright © 2018 Poe Rhiza",
+    "appId": "com.electron.poerhiza.montage",
     "linux": {
-      "category": "Graphics"
+      "icon": "static/icon.png",
+      "category": "Graphics",
+      "desktop": "static/desktopentry",
+      "target": ["rpm","tar.gz"]
+    },
+    "rpm": {
+      "icon": "static/icon.png"
+    },
+    "win": {
+      "target": ["portable", "nsis"],
+      "icon": "static/icon.ico"
     }
   }
 }

@@ -1,0 +1,7 @@
+[Desktop Entry]
+	Name=Montage
+	Exec=montage
+	Icon=montage.png
+	Type=Application
+	Terminal=False
+	Categories=Graphics;Utility;
