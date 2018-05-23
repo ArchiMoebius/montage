@@ -2,7 +2,7 @@
   "name": "montage",
   "version": "0.0.0",
   "description": "Electron Desktop application to organize image files (PNG, JPG/JPEG) into galleries",
-  "author": "PoeRhiza",
+  "author": "PoeRhiza <poerhiz@gmail.com>",
   "license": "MIT",
   "scripts": {
     "dev": "npm run lint && electron-webpack dev",
@@ -14,38 +14,39 @@
   "dependencies": {
     "archiver": "^2.1.1",
     "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.6.1",
+    "babel-preset-env": "^1.7.0",
     "babel-preset-stage-0": "^6.24.1",
-    "dexie": "^2.0.2",
+    "dexie": "^2.0.3",
     "electron-log": "^2.2.14",
     "exif": "^0.6.0",
     "moment": "^2.22.1",
     "mt-geo": "^1.0.1",
-    "sharp": "^0.20.1",
-    "source-map-support": "^0.5.4",
+    "node-forge": "^0.7.5",
+    "sharp": "^0.20.2",
+    "source-map-support": "^0.5.6",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",
-    "vue-material": "^1.0.0-beta-8",
+    "vue-material": "^1.0.0-beta-10.2",
     "vue-router": "^3.0.1",
     "vue-template-compiler": "^2.5.16",
-    "vuelidate": "^0.6.2",
+    "vuelidate": "^0.7.2",
     "vuex": "^3.0.1"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.3",
-    "electron": "1.8.4",
-    "electron-builder": "^20.9.0",
+    "electron": "^2.0.2",
+    "electron-builder": "^20.14.7",
     "electron-debug": "^1.5.0",
-    "electron-webpack": "^2.0.1",
+    "electron-webpack": "^2.1.2",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-friendly-formatter": "^4.0.1",
-    "eslint-import-resolver-webpack": "^0.9.0",
+    "eslint-import-resolver-webpack": "^0.10.0",
     "eslint-loader": "^2.0.0",
     "eslint-plugin-html": "^4.0.3",
-    "eslint-plugin-import": "^2.11.0",
-    "vue-loader": "^14.2.2",
-    "webpack": "^4.6.0"
+    "eslint-plugin-import": "^2.12.0",
+    "vue-loader": "^15.2.0",
+    "webpack": "^4.8.3"
   },
   "resolutions": {
     "webpack-sources": "1.0.1"
@@ -59,13 +60,19 @@
       "icon": "static/icon.png",
       "category": "Graphics",
       "desktop": "static/desktopentry",
-      "target": ["rpm","tar.gz"]
+      "target": [
+        "rpm",
+        "tar.gz"
+      ]
     },
     "rpm": {
       "icon": "static/icon.png"
     },
     "win": {
-      "target": ["portable", "nsis"],
+      "target": [
+        "portable",
+        "nsis"
+      ],
       "icon": "static/icon.ico"
     }
   }

@@ -5,6 +5,8 @@ import { exportAsArchive, processFiles, pathToGalleries } from '../utils';
 const logger = require('electron-log');
 const moment = require('moment');
 
+process.env.GOOGLE_API_KEY = '';
+
 let mainWindow;
 
 const winURL = process.env.NODE_ENV === 'development'
@@ -37,17 +39,22 @@ function createWindow() {
   });
 }
 
-app.on('ready', createWindow);
-
-app.on('window-all-closed', () => {
-  app.quit();
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+  }
 });
 
-app.on('window-all-maximize', () => {
+app.on('ready', createWindow);
+
+ipcMain.on('window-all-maximize', () => {
   mainWindow.maximize();
 });
 
-app.on('window-all-unmaximize', () => {
+ipcMain.on('window-all-unmaximize', () => {
   mainWindow.unmaximize();
 });
 
