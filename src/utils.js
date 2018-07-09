@@ -9,14 +9,15 @@ const geo = require('mt-geo');
 const { ExifImage } = require('exif');
 
 function checksumFile(algorithm, path) { // https://stackoverflow.com/questions/18658612/obtaining-the-hash-of-a-file-using-the-stream-capabilities-of-crypto-module-ie#18658613
-  return new Promise((resolve, reject) =>
+  return new Promise((resolve, reject) => {
     fs.createReadStream(path)
       .on('error', reject)
       .pipe(crypto.createHash(algorithm)
         .setEncoding('hex'))
-      .once('finish', function() { //eslint-disable-line
+        .once('finish', function() { //eslint-disable-line
         resolve(this.read());
-      }));
+      });
+  });
 }
 
 async function exportAsArchive(paths, outputFilepath) {

@@ -22,6 +22,7 @@ module.exports = {
     'no-shadow': 0,
     'no-console': 0,
     'no-plusplus': 0,
+    'operator-linebreak': ["error", "after"],
     'comma-dangle': ['error', 'never'],
     'import/extensions': 0,
     'import/newline-after-import': 0,

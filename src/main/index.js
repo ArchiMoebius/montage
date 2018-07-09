@@ -9,9 +9,9 @@ process.env.GOOGLE_API_KEY = '';
 
 let mainWindow;
 
-const winURL = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:9080'
-  : `file://${__dirname}/index.html`;
+const winURL = process.env.NODE_ENV === 'development' ?
+  'http://localhost:9080' :
+  `file://${__dirname}/index.html`;
 
 function createWindow() {
   logger.info('application started');

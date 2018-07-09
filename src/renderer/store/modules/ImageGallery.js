@@ -1,6 +1,6 @@
-const dbhandle = require('../db').default.getInstance();
 const path = require('path');
 const logger = require('electron-log');
+const dbhandle = require('../db').default.getInstance();
 
 const state = {
   image: {},
