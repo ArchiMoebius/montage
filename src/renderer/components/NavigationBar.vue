@@ -183,7 +183,7 @@
       progressImportingImages: 0,
       imagesImported: 0,
       gallery: [],
-      maximized: false
+      maximized: true
     }),
     computed: {
       ...mapGetters([

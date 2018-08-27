@@ -18,9 +18,9 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     center: true,
-    minWidth: 1024,
-    minHeight: 768,
-    fullscreen: false,
+    minWidth: 640,
+    minHeight: 480,
+    fullscreen: true,
     resizable: true,
     backgroundColor: '#070e1a',
     titleBarStyle: 'hidden',
@@ -51,11 +51,11 @@ app.on('second-instance', () => {
 app.on('ready', createWindow);
 
 ipcMain.on('window-all-maximize', () => {
-  mainWindow.maximize();
+  mainWindow.setFullScreen(true);
 });
 
 ipcMain.on('window-all-unmaximize', () => {
-  mainWindow.unmaximize();
+  mainWindow.setFullScreen(false);
 });
 
 app.on('activate', () => {
